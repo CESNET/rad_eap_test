@@ -1,0 +1,278 @@
+#!/bin/bash 
+# $Id: rad_eap_test,v 1.1 2006-06-01 08:36:40 semik Exp $
+#  rad_eapol_test nagios compatible wraper around eapol_test
+#  Copyright (c) 2005-2006, Pavel Pol·Ëek <polish@pf.ujep.cz>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# See README and COPYING for more details.
+
+
+#
+# obalka kolem eapol_test (z wpa_supplicanta)
+# vygeneruje konfigurak pro eapol_test a test potom provede
+#
+# wrapper script around eapol_test from wpa_supplicant project 
+# script generates configuration for eapol_test and runs it 
+# eapol_test is program for testing radius and their eap methods authentication
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+   
+# !!! to change timeout of eapol_test is needed to change source code of that
+# in eapol_test.c on line 1031 is
+# eloop_register_timeout(30, 0, eapol_test_timeout, &eapol_test, NULL);
+# where number 30 is timeout in seconds 
+# change this number to 5
+
+
+# umask
+umask 0077
+
+# temporary file of eapol_test configuration 
+if [ -z $TMPDIR ]; then
+  MYTMPDIR=`mktemp -d /tmp/rad_eap_test.XXXXXX`
+else
+  MYTMPDIR=`mktemp -d $TMPDIR/rad_eap_test.XXXXXX`
+fi
+
+CONF=$MYTMPDIR/tmp-$$
+OUT=$CONF.out
+OUT2=$CONF.out2
+
+#echo $CONF $OUT
+
+# path to eapol test
+EAPOL_PROG=./eapol_test
+
+# default verbosity
+VERBOSE=0
+
+# debug script
+DEBUG=1
+
+#default timeout
+TIMEOUT=5
+
+#default mac address
+MAC="70:6f:6c:69:73:68"
+
+# default connection info
+CONN_INFO="rad_eap_test + eapol_test"
+
+# return codes
+RET_SUCC=3
+RET_EAP_FAILED=4
+RET_RADIUS_NOT_AVAIL=5
+
+# exist eapol_test program ?
+if [ ! -x "$EAPOL_PROG" ]; then
+	echo "$EAPOL_PROG not found"
+	exit 5;
+fi
+
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:vc -- "$@"`
+
+if [ -z $1 ] ; then echo "# wrapper script around eapol_test from wpa_supplicant project 
+# script generates configuration for eapol_test and runs it 
+# eapol_test is program for testing radius and their eap methods authentication
+
+Parameters : 
+-H - Adress of radius server
+-P - Port of radius server
+-S - Secret for radius server communication
+-u - Username ( test@test.com )
+-p - Password
+-t - Timeout 
+-m - Method ( WPA-EAP, .. )
+-v - Verbose ( prints decoded last Access-accept packet)
+-c - Prints all packets decoded 
+-s - SSID
+-e - Eap method ( PEAP )
+-t - Timeout
+-M - MAC address in xx:xx:xx:xx:xx:xx format
+-i - Connection info
+-d - status directory ( unified identifier of packets
+" >&2 ; exit 1 ; fi
+
+eval set -- "$TEMP"
+
+while true ; do
+
+  case "$1" in
+    -H) ADRESS=$2; shift 2 ;;
+    -P) PORT=$2; shift 2 ;;
+    -S) SECRET=$2; shift 2 ;;
+    -u) USERNAME=$2; shift 2 ;;
+    -p) PASSWORD=$2; shift 2 ;;
+    -t) TIMEOUT=$2; shift 2 ;;
+    -m) METHOD=$2; shift 2 ;;
+    -v) VERBOSE=1;  shift ;;
+    -c) VERBOSE=2;  shift ;;
+    -s) SSID=$2; shift 2 ;;
+    -e) EAP=$2; shift 2;;
+    -t) TIMEOUT=$2; shift 2;;
+    -M) MAC=$2; shift 2;;
+    -i) CONN_INFO=$2; shift 2;;
+    -d) STATUS_DIR="-d$2"; shift 2;;
+    --) break ;;
+    *) echo "Unknown parametr"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
+  esac
+done
+
+# necessarily options
+if [ -z $ADRESS ]; then
+  echo "Address of radius server (option -H) is not specified."
+  exit 3;
+fi
+
+if [ -z $PORT ]; then
+  echo "Port of radius server (option -P) is not specified."
+  exit 3;
+fi
+
+if [ -z $SECRET ]; then
+  echo "Secret for radius server communication (option -S) is not specified."
+  exit 3;
+fi
+
+if [ -z $USERNAME ]; then
+  echo "Username (option -u) is not specified."
+  exit 3;
+fi
+
+if [ -z $PASSWORD ]; then
+  echo "Password (option -p) is not specified."
+  exit 3;
+fi
+
+if [ -z $METHOD ]; then
+  echo "Method (option -m) is not specified."
+  exit 3;
+fi
+
+if [ -z $EAP ]; then
+  echo "EAP method (option -e) is not specified."
+  exit 3;
+fi
+
+
+# generation of configuration
+echo "network={" > $CONF
+echo "  ssid=\"eduroam\"" >> $CONF
+echo "  key_mgmt=$METHOD" >> $CONF
+
+if [ "$EAP" = "PEAP" ]; then 
+  echo "  eap=$EAP" >> $CONF
+  echo "  pairwise=CCMP TKIP" >> $CONF
+  echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
+  echo "  phase2=\"auth=MSCHAPV2\"" >> $CONF
+fi 
+
+if [ "$EAP" = "LEAP" ]; then
+	echo "  eap=$EAP" >> $CONF
+fi
+
+echo "  identity=\"$USERNAME\"" >> $CONF
+echo "  password=\"$PASSWORD\"" >> $CONF
+echo "}" >> $CONF
+
+#echo $EAP
+#cat $CONF
+
+# address may be address or ip address
+IP=`echo $ADRESS | grep --regexp="^[[:digit:]+\.[:digit:]+\.[:digit:]+\.[:digit:]]"`
+if [ -z "$IP" ]; then 
+  #IP=`host $ADRESS | tail -n 1 | awk '{print $3}'`
+  IP=`dig +noall +answer +search $ADRESS | tr \\\t ' ' | grep ' IN A ' | sed "s/.* IN A //"`
+fi
+
+
+#echo $IP
+
+# garbage
+garbage() {
+	#echo Vyjimka : mazu soubory
+	rm $CONF $OUT
+	rmdir $MYTMPDIR
+}
+
+trap garbage INT
+
+BEGIN=`date +%s`
+
+# try authenticate
+if [ $VERBOSE -eq 0 ]; then
+  $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR | awk '/^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
+else
+  if [ $VERBOSE -eq 1 ]; then
+    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';}  /Access-Reject/ {exit '$RET_EAP_FAILED';} '  > $OUT2
+  else
+    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /polish/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';}  /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
+  fi
+fi
+
+
+
+RETURN_CODE=$?
+
+END=`date +%s`
+let T=END-BEGIN
+
+#echo $RETURN_CODE
+
+# remove configuration file
+#rm $CONF
+
+if [ $VERBOSE -eq 1 ]; then
+	grep -A 100 "(Access-Accept)" $OUT2 > $OUT
+	rm $OUT2
+fi
+
+# processing of return code
+# Successfull authentication
+if [ $RETURN_CODE -eq $RET_SUCC ]; then
+  echo "access-accept; $T"
+  if [ $VERBOSE -gt 0 ]; then
+	  cat $OUT
+  fi
+
+  rm $CONF $OUT
+  rmdir $MYTMPDIR
+  exit 0;
+fi
+
+# Bad name or password
+# string "CTRL-EVENT-EAP-FAILURE EAP authentication failed"
+if [ $RETURN_CODE -eq $RET_EAP_FAILED ]; then
+  echo "access-reject; $T"
+  if [ $VERBOSE -gt 0 ]; then
+	  cat $OUT
+  fi
+
+  rm $CONF $OUT
+  rmdir $MYTMPDIR
+  exit 1;
+fi
+
+# timeout return same error as above
+# timeout string "EAPOL test timed out"
+if [ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]; then
+  #echo "Timeout : Radius server is not available"
+  echo "timeout; $T"
+  if [ $VERBOSE -gt 0 ]; then
+	  cat $OUT
+  fi
+
+  rm $CONF $OUT
+  rmdir $MYTMPDIR
+  exit 2;
+fi
+
+# other case is probably error
+echo "Probably configuration error";
+echo "Return code: " $RETURN_CODE;
+exit 10;
