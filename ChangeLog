@@ -1,36 +1,41 @@
-ChangeLog for rad_eap-test
-
-2006-05-05 - v0.14
+2006-05-05 Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.14
 	   * new parametr -d is added for status directory, where
 	     identifier of packet to particular destination is held
 
-2006-xx-xx - v0.13
+2006-xx-xx Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.13
 	   * patch for eapol_test.c was accepted, only compilation of cvs
 	     version of eapol_test (connect info parametr was changed from
 	     -i to -C in eapol_test)
 
-2006-xx-xx - v0.12
+2006-xx-xx Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.12
 	   * to eapol_test and rad_eap_test is added -i parametr for
 	     addition connection info
 
-2006-04-11 - v0.11
+2006-04-11 Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.11
 	   * rad_eap_test now uses source from CVS
 	   * bug in verbose mode is got out
 	   * parametr -M was added, you can specify source MAC address
 
-2006-xx-xx - v0.09
+2006-xx-xx Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.09
 	   * return codes from awk was changed, because default awk return
 	     code is 0, which was SUCCESS too
 	   * LEAP EAP method is added (return strings from eapol_test is
 	     different)
 
-2006-xx-xx - v0.08
+2006-xx-xx Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.08
 	   * rad_eap_test checks existence of eapol_test program
 	   * temporary directory is renamed to rad_eap_test.XXXXXX, where
 	     X is something random
 	   * dig is used for name resolve instead of host
 
-2006-xx-xx - v0.07
+2006-xx-xx Pavel Polacek <polish@pf.ujep.cz>
+	   * Version: 0.07
 	   * Ctrl-C runs garbage procedure
 	   * mktemp command is used for creating temporary directory
 	   * script accepts TMPDIR variable
