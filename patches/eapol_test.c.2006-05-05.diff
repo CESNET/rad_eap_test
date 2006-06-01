@@ -1,0 +1,93 @@
+--- eapol_test.c.orig	2006-05-03 21:58:54.000000000 +0200
++++ eapol_test.c	2006-05-05 00:47:50.000000000 +0200
+@@ -72,6 +72,7 @@
+ 
+ static struct eapol_test_data eapol_test;
+ 
++char *status_dir = "/tmp";
+ 
+ static void send_eap_request_identity(void *eloop_ctx, void *timeout_ctx);
+ 
+@@ -127,6 +128,44 @@
+ 	return buf;
+ }
+ 
++static u8 status_get_id( u8 *ip ) 
++{
++	static u8 ret=0;
++	FILE *f;
++	int loc_ret;
++	char filename[250];
++	// printf( "polish: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3] );
++	 
++	snprintf( filename, sizeof(filename), "%s/eapol_test_%d.%d.%d.%d", status_dir, ip[0], ip[1], ip[2], ip[3] );
++	// we try to open status file for writing 
++	if(( f = fopen( filename, "r+")) == NULL) {
++		// we can try to create the file
++		if(( f = fopen( filename, "w+")) != NULL ) {
++			// file is opened
++			// lock the file
++			printf( "polish : soubor vytvarim\n");
++			flockfile( f );
++			fprintf( f, "%d", (ret + 1) );
++			funlockfile( f );
++			fclose( f );
++		}
++	} else {
++		printf( "polish : oteviram pro cteni i zapis\n" );
++		// lock the file
++		flockfile( f );
++		// read actual value 
++		fscanf( f, "%d", &loc_ret );
++		ret = (u8) loc_ret;
++		loc_ret = ( loc_ret + 1 ) % 256;
++		fseek( f, SEEK_SET, 0 );
++		fprintf( f, "%3d", loc_ret );
++		funlockfile( f );
++		fclose( f );
++
++	}	
++	
++	return ++ret;
++}
+ 
+ static void ieee802_1x_encapsulate_radius(struct eapol_test_data *e,
+ 					  const u8 *eap, size_t len)
+@@ -139,7 +178,7 @@
+ 	wpa_printf(MSG_DEBUG, "Encapsulating EAP message into a RADIUS "
+ 		   "packet");
+ 
+-	e->radius_identifier = radius_client_get_id(e->radius);
++	e->radius_identifier = status_get_id( (u8 *) &e->radius_conf->auth_server->addr.u.v4 ); // radius_client_get_id(e->radius);
+ 	msg = radius_msg_new(RADIUS_CODE_ACCESS_REQUEST,
+ 			     e->radius_identifier);
+ 	if (msg == NULL) {
+@@ -906,7 +945,8 @@
+ 	       "CONNECT 11Mbps 802.11b)\n"
+ 	       "  -M<client MAC address> = Set own MAC address "
+ 	       "(Calling-Station-Id,\n"
+-	       "                           default: 02:00:00:00:00:01)\n");
++	       "                           default: 02:00:00:00:00:01)\n"
++	       "  -d<directory> = status directory default: /tmp\n");
+ }
+ 
+ 
+@@ -931,7 +971,7 @@
+ 	wpa_debug_show_keys = 1;
+ 
+ 	for (;;) {
+-		c = getopt(argc, argv, "a:c:C:M:np:r:s:St:W");
++		c = getopt(argc, argv, "a:c:C:M:np:r:s:St:d:W");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -971,6 +1011,9 @@
+ 		case 'W':
+ 			wait_for_monitor++;
+ 			break;
++		case 'd':
++			status_dir = optarg;
++			break;
+ 		default:
+ 			usage();
+ 			return -1;

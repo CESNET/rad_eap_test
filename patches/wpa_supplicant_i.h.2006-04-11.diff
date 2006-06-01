@@ -1,0 +1,19 @@
+--- wpa_supplicant_i.h.orig	2006-04-11 23:36:10.000000000 +0200
++++ wpa_supplicant_i.h	2006-04-11 23:36:31.000000000 +0200
+@@ -17,6 +17,8 @@
+ 
+ #include "driver.h"
+ 
++#define SIZE_OF_BUF 128
++
+ struct wpa_blacklist {
+ 	struct wpa_blacklist *next;
+ 	u8 bssid[ETH_ALEN];
+@@ -178,6 +180,7 @@
+ 	struct l2_packet_data *l2;
+ 	struct l2_packet_data *l2_br;
+ 	unsigned char own_addr[ETH_ALEN];
++	char conn_info[SIZE_OF_BUF];
+ 	char ifname[100];
+ 	char bridge_ifname[16];
+ 

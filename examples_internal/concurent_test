@@ -1,0 +1,10 @@
+#!/bin/bash
+# exec more concurent test for sae destination 
+./spust_test_alldecoded > con1 &
+./spust_test_alldecoded > con2 &
+./spust_test_alldecoded > con3 &
+./spust_test_alldecoded > con4 &
+./spust_test_alldecoded > con5 &
+sleep 5
+cat con[1-5] | grep identifier | awk '{print $5}' |  less
+#cat con[1-5] | grep identifier | awk '{print $5}' | sort |  less

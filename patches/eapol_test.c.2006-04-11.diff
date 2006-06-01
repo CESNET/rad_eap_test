@@ -1,0 +1,207 @@
+--- eapol_test.puv	2006-04-11 10:27:42.000000000 +0200
++++ eapol_test.c	2006-04-11 23:29:10.000000000 +0200
+@@ -33,7 +33,6 @@
+ #include "ctrl_iface.h"
+ #include "pcsc_funcs.h"
+ 
+-
+ extern int wpa_debug_level;
+ extern int wpa_debug_show_keys;
+ 
+@@ -129,7 +128,7 @@
+ 					  const u8 *eap, size_t len)
+ {
+ 	struct radius_msg *msg;
+-	char buf[128];
++	char buf[SIZE_OF_BUF];
+ 	const struct eap_hdr *hdr;
+ 	const u8 *pos;
+ 
+@@ -197,7 +196,7 @@
+ 		goto fail;
+ 	}
+ 
+-	snprintf(buf, sizeof(buf), "CONNECT 11Mbps 802.11b");
++	snprintf(buf, sizeof(buf), e->wpa_s->conn_info);
+ 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CONNECT_INFO,
+ 				 (u8 *) buf, strlen(buf))) {
+ 		printf("Could not add Connect-Info\n");
+@@ -650,13 +649,13 @@
+ 
+ static void wpa_init_conf(struct eapol_test_data *e,
+ 			  struct wpa_supplicant *wpa_s, const char *authsrv,
+-			  int port, const char *secret)
++			  int port, const char *secret )
+ {
+ 	struct hostapd_radius_server *as;
+ 	int res;
+ 
+ 	wpa_s->bssid[5] = 1;
+-	wpa_s->own_addr[5] = 2;
++	
+ 	e->own_ip_addr.s_addr = htonl((127 << 24) | 1);
+ 	strncpy(wpa_s->ifname, "test", sizeof(wpa_s->ifname));
+ 
+@@ -875,6 +874,90 @@
+ 	eloop_terminate();
+ }
+ 
++int arg_str_to_mac( char *str, unsigned char *result ) {
++	int n, high;
++	int m = 0;
++	int index = 0;
++	
++	printf("%s\n", str);
++
++	high = 16; 
++	
++	for( n=0; n<17; n++ ) {
++          switch( str[n] ) {
++	    case ':': high=16; continue; break;
++	    case '1':
++		      m=1;
++		      break;
++            case '2': 
++		      m=2;
++		      break;
++	    case '3': 
++		      m=3;
++		      break;
++            case '4': 
++		      m=4;
++		      break;
++	    case '5': 
++		      m=5;
++		      break;
++            case '6': 
++		      m=6;
++		      break;
++	    case '7': 
++		      m=7;
++		      break;
++            case '8': 
++		      m=8;
++		      break;
++	    case '9': 
++		      m=9;
++		      break;
++            case '0': 
++		      m=0; 
++		      break;
++	    case 'A':
++	    case 'a': 
++		      m=10; break;
++            case 'B':
++	    case 'b': 
++		      m=11;
++		      break;
++	    case 'C':
++	    case 'c': 
++		      m=12;
++		      break;
++	    case 'D':
++	    case 'd': 
++		      m=13;
++		      break;
++	    case 'E':
++	    case 'e': 
++		      m=14;
++		      break;
++	    case 'F':
++	    case 'f': 
++		      m=15;
++		      break;
++		
++	  }
++	  /* printf("high %d\n", high ); */
++	  
++	  if( high == 16 ) {
++		  result[index] = (unsigned char) m*16;
++		  /* printf("%d\n", result[index] ); */
++	  } else {
++		  result[index] += (unsigned char) m;
++		  /* printf("%d\n", result[index] ); */
++		  index++;
++	  }
++	  high -= 15;
++	}
++	
++	
++	return 0;
++}
++
+ 
+ static void usage(void)
+ {
+@@ -897,7 +980,9 @@
+ 	       "  -W = wait for a control interface monitor before starting\n"
+ 	       "  -S = save configuration after authentiation\n"
+ 	       "  -n = no MPPE keys expected\n"
+-	       "  -t<timeout> = sets timeout in seconds (default: 30 s)\n");
++	       "  -t<timeout> = sets timeout in seconds (default: 30 s)\n"
++	       "  -M<mac_addr> = sets our mac address\n"
++	       "  -i<connect_info> = description of type of connection\n");
+ }
+ 
+ 
+@@ -910,6 +995,10 @@
+ 	char *as_secret = "radius";
+ 	char *conf = NULL;
+ 	int timeout = 30;
++	char *mac_addr_str = "70:6f:6c:69:73:68";
++	unsigned char mac_addr[ETH_ALEN];
++	int n;
++	char *conn_info = "CONNECT 11Mbps 802.11b";
+ 
+ 	if (os_program_init())
+ 		return -1;
+@@ -920,7 +1009,7 @@
+ 	wpa_debug_show_keys = 1;
+ 
+ 	for (;;) {
+-		c = getopt(argc, argv, "a:c:np:r:s:St:W");
++		c = getopt(argc, argv, "a:c:np:r:s:St:M:i:W");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -951,6 +1040,13 @@
+ 		case 'W':
+ 			wait_for_monitor++;
+ 			break;
++		case 'M':
++			mac_addr_str = optarg;
++			break;
++		case 'i':
++			conn_info = optarg;
++			break;
++			
+ 		default:
+ 			usage();
+ 			return -1;
+@@ -981,7 +1077,7 @@
+ 		wpa_printf(MSG_ERROR, "Failed to initialize event loop");
+ 		return -1;
+ 	}
+-
++	
+ 	memset(&wpa_s, 0, sizeof(wpa_s));
+ 	eapol_test.wpa_s = &wpa_s;
+ 	wpa_s.conf = wpa_config_read(conf);
+@@ -994,6 +1090,12 @@
+ 		return -1;
+ 	}
+ 
++	arg_str_to_mac( mac_addr_str, mac_addr );
++	for( n=0; n<ETH_ALEN; n++ )
++		wpa_s.own_addr[n] = mac_addr[n];
++
++	strncpy( wpa_s.conn_info, conn_info, sizeof(wpa_s.conn_info) );
++	
+ 	wpa_init_conf(&eapol_test, &wpa_s, as_addr, as_port, as_secret);
+ 	wpa_s.ctrl_iface = wpa_supplicant_ctrl_iface_init(&wpa_s);
+ 	if (wpa_s.ctrl_iface == NULL) {
+@@ -1053,3 +1155,4 @@
+ 
+ 	return ret;
+ }
++

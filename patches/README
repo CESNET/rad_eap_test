@@ -1,0 +1,14 @@
+2006-05-04:
+	* eapol_test.c.2006-05-05.diff
+	* Patch implement storage of Identifier in local file. It
+	  prevents tested RADIUSes from trigering Duplicate packet
+	  detection.
+	* Patch is being tested, it was not sent to upstream.
+
+2006-04-11:
+	* eapol_test.c.2006-04-11.diff
+	* wpa_supplicant_i.h.2006-04-11.diff
+	* Patches are against CVS 100406. They implements -t to set
+	  timeout, -M to set MAC address and -i to set connection info
+	  from command line of eapol_test.
+	* They were accepted by upstream!

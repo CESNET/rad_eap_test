@@ -1,0 +1,280 @@
+access-accept; 0
+polish : oteviram pro cteni i zapis
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=80 length=112
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=14
+      Value: 02 00 00 0c 01 61 63 63 6f 75 6e 74
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 57 19 da bb fa cc 28 38 0c 3b 42 00 37 ef 75 45
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=80 length=64
+   Attribute 79 (EAP-Message) length=8
+      Value: 01 01 00 06 19 20
+   Attribute 80 (Message-Authenticator) length=18
+      Value: cc 66 7d c6 c0 23 73 84 45 0a 63 3d 95 2c cc b2
+   Attribute 24 (State) length=18
+      Value: 27 af b9 15 bd 5f 76 19 ee 9e 1c b4 b9 b6 e7 4d
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=85 length=225
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=109
+      Value: 02 01 00 6b 19 00 16 03 01 00 60 01 00 00 5c 03 01 44 5a 8a 4e af 76 a2 cd 7b fc 17 78 d7 e2 9c 2a 98 9b a1 97 d8 d6 97 b1 ad 12 c7 be c3 7e 4f 58 00 00 34 00 39 00 38 00 35 00 16 00 13 00 0a 00 33 00 32 00 2f 00 66 00 05 00 04 00 63 00 62 00 61 00 15 00 12 00 09 00 65 00 64 00 60 00 14 00 11 00 08 00 06 00 03 02 01 00
+   Attribute 24 (State) length=18
+      Value: 27 af b9 15 bd 5f 76 19 ee 9e 1c b4 b9 b6 e7 4d
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 8b 9b 2a 97 c3 ad 14 88 15 69 21 51 e4 df ce 0a
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=85 length=1100
+   Attribute 79 (EAP-Message) length=255
+      Value: 01 02 04 0a 19 c0 00 00 04 e2 16 03 01 00 4a 02 00 00 46 03 01 44 5a 8a 50 9f 99 e1 11 81 a8 88 89 48 a9 04 82 be f0 f8 7f ab 69 ea c1 f0 42 78 69 e7 4f e8 67 20 cf 5b 13 84 1e 3a 98 09 4e c2 bd b8 f4 42 61 79 73 bb 8e 7e a5 a3 17 11 0b c9 0b e1 ea e2 3c 54 00 35 00 16 03 01 04 85 0b 00 04 81 00 04 7e 00 04 7b 30 82 04 77 30 82 03 5f a0 03 02 01 02 02 04 42 b2 f2 d3 30 0d 06 09 2a 86 48 86 f7 0d 01 01 05 05 00 30 43 31 12 30 10 06 0a 09 92 26 89 93 f2 2c 64 01 19 16 02 63 7a 31 19 30 17 06 0a 09 92 26 89 93 f2 2c 64 01 19 16 09 63 65 73 6e 65 74 2d 63 61 31 12 30 10 06 03 55 04 03 13 09 43 45 53 4e 45 54 20 43 41 30 1e 17 0d 30 35 30 39 32 37 31 32 31 37 34 34 5a 17 0d 30 36 31 30 32 37 31 32 34 37 34 34 5a 30 76 31 12 30 10 06 0a 09 92 26 89 93 f2
+   Attribute 79 (EAP-Message) length=255
+      Value: 2c 64 01 19 16 02 63 7a 31 19 30 17 06 0a 09 92 26 89 93 f2 2c 64 01 19 16 09 63 65 73 6e 65 74 2d 63 61 31 24 30 22 06 03 55 04 0a 13 1b 55 6e 69 76 65 72 73 69 74 79 20 6f 66 20 4a 2e 20 45 2e 20 50 75 72 6b 79 6e 65 31 1f 30 1d 06 03 55 04 03 13 16 70 61 72 61 6c 65 6e 2d 72 61 64 69 75 73 2e 75 6a 65 70 2e 63 7a 30 81 9f 30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00 03 81 8d 00 30 81 89 02 81 81 00 c3 b6 da f7 4d cd 2c 1b f8 d0 57 dd 2d c3 ed 1a 84 50 04 b4 e8 74 d7 c2 4f 06 60 9b 22 5e 2d 22 08 02 36 99 e1 ae 87 b9 be c1 05 84 85 72 7b 2a c4 b5 a4 47 89 dd 01 cd 01 61 16 64 f3 ae a8 b3 32 4c 0e 80 94 36 50 b3 aa 57 84 16 be 35 f1 66 8a 14 24 9d 4e 6a d3 f6 ad 22 36 ac e3 e0 a0 2c 07 f8 11 34 7e 60 6c 83 33 87 1c d0 87 67 67 f8 12 ec 52 f0 ca 8d
+   Attribute 79 (EAP-Message) length=255
+      Value: c6 82 9e 01 a3 a0 ca 54 58 a3 02 03 01 00 01 a3 82 01 c2 30 82 01 be 30 0e 06 03 55 1d 0f 01 01 ff 04 04 03 02 05 a0 30 13 06 03 55 1d 25 04 0c 30 0a 06 08 2b 06 01 05 05 07 03 01 30 19 06 03 55 1d 20 04 12 30 10 30 0e 06 0c 2b 06 01 04 01 be 79 01 02 02 02 00 30 2d 06 03 55 1d 11 04 26 30 24 81 11 70 6f 6c 69 73 68 40 70 66 2e 75 6a 65 70 2e 63 7a 82 0f 70 61 72 61 6c 65 6e 2e 75 6a 65 70 2e 63 7a 30 82 01 0b 06 03 55 1d 1f 04 82 01 02 30 81 ff 30 5a a0 58 a0 56 a4 54 30 52 31 12 30 10 06 0a 09 92 26 89 93 f2 2c 64 01 19 16 02 63 7a 31 19 30 17 06 0a 09 92 26 89 93 f2 2c 64 01 19 16 09 63 65 73 6e 65 74 2d 63 61 31 12 30 10 06 03 55 04 03 13 09 43 45 53 4e 45 54 20 43 41 31 0d 30 0b 06 03 55 04 03 13 04 43 52 4c 31 30 81 a0 a0 81 9d a0 81 9a 86 42
+   Attribute 79 (EAP-Message) length=255
+      Value: 68 74 74 70 3a 2f 2f 77 77 77 2e 63 65 73 6e 65 74 2e 63 7a 2f 70 6b 69 2f 63 72 6c 2f 63 6e 3d 43 45 53 4e 45 54 25 32 30 43 41 2c 64 63 3d 63 65 73 6e 65 74 2d 63 61 2c 64 63 3d 63 7a 2e 63 72 6c 86 54 6c 64 61 70 3a 2f 2f 6c 64 61 70 2e 63 65 73 6e 65 74 2d 63 61 2e 63 7a 2f 63 6e 3d 43 45 53 4e 45 54 25 32 30 43 41 2c 64 63 3d 63 65 73 6e 65 74 2d 63 61 2c 64 63 3d 63 7a 3f 63 65 72 74 69 66 69 63 61 74 65 52 65 76 6f 63 61 74 69 6f 6e 4c 69 73 74 30 1f 06 03 55 1d 23 04 18 30 16 80 14 2f 6c 05 c3 51 26 ac af 39 9c 3e 38 35 dd 52 29 27 80 c5 f5 30 1d 06 03 55 1d 0e 04 16 04 14 41 0b c0 a4 47 4a 03 a5 37 01 ee bb cb cd 3f 58 7d d1 e0 77 30 0d 06 09 2a 86 48 86 f7 0d 01 01 05 05 00 03 82 01 01 00 2e 99 95 02 33 3d c6 26 48 82 ce db 38 78 3b e6 92
+   Attribute 79 (EAP-Message) length=24
+      Value: 41 1e 7c f8 a2 2c a6 83 0a 2f 28 72 01 ac a7 b9 84 32 9c 89 85 8b
+   Attribute 80 (Message-Authenticator) length=18
+      Value: b3 6c 27 9d 5d 5d 22 16 2d a3 5c 41 ac 9d 28 6e
+   Attribute 24 (State) length=18
+      Value: fd b1 e4 45 ad f3 25 1d 27 08 38 38 63 d7 b3 41
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=92 length=124
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=8
+      Value: 02 02 00 06 19 00
+   Attribute 24 (State) length=18
+      Value: fd b1 e4 45 ad f3 25 1d 27 08 38 38 63 d7 b3 41
+   Attribute 80 (Message-Authenticator) length=18
+      Value: f3 78 99 6a 39 a2 fe 90 8f 73 80 75 6d d2 04 71
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=92 length=290
+   Attribute 79 (EAP-Message) length=234
+      Value: 01 03 00 e8 19 00 38 c4 ae 80 90 36 ee 2a f8 87 4c 81 b8 62 ef 74 27 20 c8 ac 4b 19 3f 06 45 c9 88 cc 55 ba 0b b5 8e 9c 44 d5 f1 46 31 48 9b 07 51 b0 51 33 0d e8 b8 3f cc 8c 75 a7 18 e0 d3 ac 1a 23 fb ac 2f fe 4c 9a ba ff 8b df fc 05 d3 f9 29 99 a1 9d f3 9b 53 4a 5a b5 51 87 14 08 48 4e 97 21 3b 54 50 a3 92 60 2a 65 6b af b2 a9 68 0c c5 31 da 38 f7 82 53 5b 1f e9 8d 41 99 0d 6c ed 8f 8f c6 10 ef 26 f3 c4 70 26 e6 03 96 42 cf fd d3 8c 1b f7 b6 14 a8 44 58 8b 1e 54 f5 30 e0 21 22 62 4c e7 f1 83 fb f3 13 67 77 c8 dc a3 9c ea d4 aa 94 dd f8 38 46 74 c6 76 bf e9 05 69 03 bc 5c 36 06 09 b3 db 20 63 e5 c9 27 b7 8a 84 fe c4 24 43 0d 61 2c 47 2b 3f 9c 75 0a 98 d9 6a 83 16 03 01 00 04 0e 00 00 00
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 93 48 e0 eb fa 43 46 b1 1b 8c a2 02 3c b2 d8 46
+   Attribute 24 (State) length=18
+      Value: a0 5d c7 05 6a 84 6a ff 93 22 af 6f 67 ec 27 02
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=93 length=322
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=206
+      Value: 02 03 00 cc 19 00 16 03 01 00 86 10 00 00 82 00 80 0d 9d 9c b6 b3 24 b8 f5 ca bd 80 cc f3 16 24 ce 94 ff 1d c6 2d 83 80 3f ed 08 61 ad 44 14 06 91 c4 43 fc 1d 4d 19 df e6 43 51 9a 54 db 89 40 f8 35 33 a6 81 0b 56 cc a8 54 87 2b a3 8a 66 2b 57 70 b6 98 1f ff d5 7f 61 06 43 77 91 e1 32 a4 f8 17 62 73 23 2c ca d2 87 df 3d 94 4e 6e 5d 8a 30 e6 11 96 98 f9 66 5e f3 7e 12 d5 96 28 dc ef 54 42 1b 83 84 59 8d e3 52 a9 1e b4 87 80 0a ee 21 14 03 01 00 01 01 16 03 01 00 30 be 0c 1c 5b 76 26 4d 94 b4 40 ba b2 fc e9 61 ba 4f 29 b0 73 6e a8 1b 69 e4 3d 1d 10 77 18 9d 52 a8 07 c9 5d 38 eb c2 f3 b8 d8 ff a6 bf 2b 02 7c
+   Attribute 24 (State) length=18
+      Value: a0 5d c7 05 6a 84 6a ff 93 22 af 6f 67 ec 27 02
+   Attribute 80 (Message-Authenticator) length=18
+      Value: e8 50 ee fd e4 df a1 e7 d1 13 76 64 28 77 b2 ed
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=93 length=123
+   Attribute 79 (EAP-Message) length=67
+      Value: 01 04 00 41 19 00 14 03 01 00 01 01 16 03 01 00 30 4e ac 90 31 16 fb 63 9e 85 10 b8 3e 84 18 9c ae 26 41 17 ba ef b4 54 72 71 ef 43 e2 fb 12 d3 f5 44 bf c9 7d 6f 44 2d 5c 72 a3 aa ec 1a bf 46 ef
+   Attribute 80 (Message-Authenticator) length=18
+      Value: fc 1c c8 d1 68 94 ef 79 3c 54 99 57 09 8b a3 c7
+   Attribute 24 (State) length=18
+      Value: ad 22 7e 68 19 00 a7 26 03 69 bb 19 b7 35 40 a1
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=95 length=124
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=8
+      Value: 02 04 00 06 19 00
+   Attribute 24 (State) length=18
+      Value: ad 22 7e 68 19 00 a7 26 03 69 bb 19 b7 35 40 a1
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 5f 26 a6 43 9c 56 19 db 00 13 a5 e4 7e a3 a6 25
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=95 length=138
+   Attribute 79 (EAP-Message) length=82
+      Value: 01 05 00 50 19 00 17 03 01 00 20 1a f2 11 77 52 61 ce 23 1e 1a 62 28 37 c9 36 30 a4 8f 43 e5 20 c4 2b 52 be c6 16 96 c7 e5 e9 9a 17 03 01 00 20 80 ed 24 fc 93 98 0e 33 57 f8 d3 10 01 62 ad 6f b2 bb 8c 19 60 f6 25 69 01 d5 40 ef f6 34 e2 de
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 6f bb 31 fa 64 26 20 2c c2 3b da 3a 84 d1 48 4c
+   Attribute 24 (State) length=18
+      Value: 2f 8a 7c 16 de 5b d7 01 a8 c6 e5 59 b3 67 f7 77
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=96 length=198
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=82
+      Value: 02 05 00 50 19 00 17 03 01 00 20 46 11 18 ba 37 82 fb 02 77 cb 78 03 e2 c1 c7 d9 b9 b6 50 e4 42 0d 43 af ef ec f7 18 ee 6e 40 ff 17 03 01 00 20 37 62 a1 55 1c 9b 31 44 90 07 3b 18 fb e5 6c 2f 64 cd 23 99 51 c2 f8 09 c0 e6 7b bd 39 e6 c5 50
+   Attribute 24 (State) length=18
+      Value: 2f 8a 7c 16 de 5b d7 01 a8 c6 e5 59 b3 67 f7 77
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 1b a7 1d 5a 52 a7 39 eb 6d 24 2b 1c 0d 6b 6c 29
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=96 length=170
+   Attribute 79 (EAP-Message) length=114
+      Value: 01 06 00 70 19 00 17 03 01 00 20 db 4c 28 80 c3 48 4b be d0 93 12 a2 f2 e1 0b 06 3d 6a 1c e1 70 d5 e0 5c 89 41 09 ec 81 c6 4e 23 17 03 01 00 40 5c 2a e2 71 26 77 bf 31 49 51 5a 66 05 2f 51 67 3f 61 e8 99 2b af a6 9e 1c be 7f aa 8f 1a 07 35 bd bc 3b 8b 59 0e f3 65 33 7c b8 01 ee 73 e6 22 94 cb b0 13 08 05 11 57 64 12 57 42 b4 7a 7d 2f
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 48 40 57 28 bc 62 65 e3 85 03 b0 ae de 49 0f 43
+   Attribute 24 (State) length=18
+      Value: 30 5c f3 c3 59 da 4e 43 24 d7 e4 28 54 c1 42 79
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=98 length=262
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=146
+      Value: 02 06 00 90 19 00 17 03 01 00 20 82 41 6d 68 b8 0e fb 0a d4 b0 ac 37 25 c0 f8 f7 e6 a1 67 ea 2e c1 be 02 4f 7a 68 ab 77 e3 3e 72 17 03 01 00 60 a7 d7 93 16 8b 2f a7 fd a0 a4 d0 51 98 c3 1a 49 9e db 56 7c 0d 1d 91 68 4d cd d9 05 6b 43 7c 77 45 8c 97 ef df 25 b2 3e 04 43 34 85 ed c8 35 d6 bf 78 5c dd b3 30 5b e1 ce 5f f0 91 74 57 ac 3f be 42 d8 71 30 27 4a d3 61 6f 8b d7 73 9a c0 18 11 e3 ba 83 15 7c 9b 88 33 91 ea 85 a3 eb da e0
+   Attribute 24 (State) length=18
+      Value: 30 5c f3 c3 59 da 4e 43 24 d7 e4 28 54 c1 42 79
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 5f 6f 5c 99 d0 2e 3d 3b 0c b1 2b 5e 17 43 f9 b7
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=98 length=186
+   Attribute 79 (EAP-Message) length=130
+      Value: 01 07 00 80 19 00 17 03 01 00 20 29 cf d2 0e 56 fc 04 2e 6b fc bd 97 13 3c e6 11 7a 66 a9 c3 25 08 1b ac 45 b8 93 f1 27 32 ea 06 17 03 01 00 50 51 66 90 d4 f2 eb d8 1b 2f 33 22 af 25 a5 a4 cf b9 83 5a 23 b7 1c 64 25 59 cf 90 dd b9 09 6e 1e a8 27 c6 cf a2 a2 05 3f 06 44 8c 13 f5 6e 74 4c 56 c4 82 74 15 12 cc ca bd f1 bf ba 1d 32 83 29 b0 a3 3e b7 a4 1f 82 b3 fb 09 35 bd 83 08 fd 37
+   Attribute 80 (Message-Authenticator) length=18
+      Value: c5 93 dd 23 47 ff 61 e7 2f 23 54 43 a1 5d 56 4c
+   Attribute 24 (State) length=18
+      Value: b6 03 1f 2c 41 90 44 de 41 bd 4d c9 3f 5a da 78
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=100 length=198
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=82
+      Value: 02 07 00 50 19 00 17 03 01 00 20 0d 64 6b 37 0a 91 d8 88 c4 c9 16 56 e5 9c 70 7d 7e df 04 30 5a 11 e1 a8 63 5e b5 0e dd 90 f2 bd 17 03 01 00 20 64 5e 74 d0 7c 6d ae e0 62 5f c4 11 72 f4 55 fb cd c5 a6 72 6e 56 a5 f5 b4 53 a5 03 3b 32 65 ca
+   Attribute 24 (State) length=18
+      Value: b6 03 1f 2c 41 90 44 de 41 bd 4d c9 3f 5a da 78
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 6a fd c0 8e 63 d9 cf 82 e7 24 86 98 f1 0b 15 53
+Received RADIUS message
+RADIUS message: code=11 (Access-Challenge) identifier=100 length=138
+   Attribute 79 (EAP-Message) length=82
+      Value: 01 08 00 50 19 00 17 03 01 00 20 bb 3a e6 7b 53 8e e6 24 e6 11 c5 fa 66 8f e7 2e 23 ed 9a 37 a2 38 b7 bb 62 60 b8 f7 2b 87 56 1d 17 03 01 00 20 70 03 42 39 3c 8a ba 16 63 4f f4 5d 97 87 38 3d 9d 0f ad 33 18 58 7c 51 00 71 af e6 17 f0 02 0e
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 1b 97 cc 77 23 44 c3 7e 03 ba ff 12 07 40 4d 70
+   Attribute 24 (State) length=18
+      Value: b9 92 b6 e8 ff d1 ee a5 70 9a c8 6a f4 44 79 12
+polish : oteviram pro cteni i zapis
+  Copied RADIUS State Attribute
+Sending RADIUS message to authentication server
+RADIUS message: code=1 (Access-Request) identifier=102 length=198
+   Attribute 1 (User-Name) length=9
+      Value: 'account'
+   Attribute 4 (NAS-IP-Address) length=6
+      Value: 127.0.0.1
+   Attribute 31 (Calling-Station-Id) length=19
+      Value: 'AA-BB-12-34-56-90'
+   Attribute 12 (Framed-MTU) length=6
+      Value: 1400
+   Attribute 61 (NAS-Port-Type) length=6
+      Value: 19
+   Attribute 77 (Connect-Info) length=14
+      Value: 'Nazdar bazar'
+   Attribute 79 (EAP-Message) length=82
+      Value: 02 08 00 50 19 00 17 03 01 00 20 ae e9 63 02 f1 6a ee 78 58 24 d8 80 18 22 fc fe bc 19 8d 0f a5 c3 f6 0d ea c9 ba 7f fd d3 87 da 17 03 01 00 20 7d f5 8e 93 f9 03 d4 c8 b9 53 eb ce 06 f2 3b c6 7a de 1c 22 f1 00 6b dd e3 cf 42 63 4f 71 66 8c
+   Attribute 24 (State) length=18
+      Value: b9 92 b6 e8 ff d1 ee a5 70 9a c8 6a f4 44 79 12
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 62 63 92 4a f1 f4 19 3f e3 90 52 64 ce 5a 0b 2c
+Received RADIUS message
+RADIUS message: code=2 (Access-Accept) identifier=102 length=169
+   Attribute 26 (Vendor-Specific) length=58
+      Value: 00 00 01 37 11 34 d7 70 52 00 a7 7a 31 19 2a d8 5d 57 22 0a 51 3f 02 ec 9f 3c 69 bd 08 56 ff 3b 87 76 e2 f0 0c c9 76 b9 04 f6 e6 c8 04 d5 d9 f7 4e 29 a7 3b d6 8e e5 ac
+   Attribute 26 (Vendor-Specific) length=58
+      Value: 00 00 01 37 10 34 db 78 e2 b3 aa f6 22 a1 a0 25 cd 0e 3d 6f 14 f9 a8 6b 68 cd 85 2e b3 b7 05 57 1c 48 0c e2 6e ff 88 41 68 7c f0 84 1b 43 77 bf f1 ea ef 57 e0 93 f7 b5
+   Attribute 79 (EAP-Message) length=6
+      Value: 03 08 00 04
+   Attribute 80 (Message-Authenticator) length=18
+      Value: 73 d3 a5 58 2d 48 ce a2 bc e2 8b d8 c3 e0 52 9b
+   Attribute 1 (User-Name) length=9
+      Value: 'account'

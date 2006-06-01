@@ -1,5 +1,7 @@
 #!/bin/bash 
-# $Id: rad_eap_test,v 1.1 2006-06-01 08:36:40 semik Exp $
+
+# $Id: rad_eap_test,v 1.2 2006-06-01 08:37:18 semik Exp $
+
 #  rad_eapol_test nagios compatible wraper around eapol_test
 #  Copyright (c) 2005-2006, Pavel Pol·Ëek <polish@pf.ujep.cz>
 #
