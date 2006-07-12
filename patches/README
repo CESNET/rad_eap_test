@@ -11,4 +11,4 @@
 	* Patches are against CVS 100406. They implements -t to set
 	  timeout, -M to set MAC address and -i to set connection info
 	  from command line of eapol_test.
-	* They were accepted by upstream!
+	* They were accepted by upstream in 0.5.3 version!
