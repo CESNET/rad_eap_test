@@ -1,35 +1,15 @@
 #!/bin/bash 
 
-# $Id: rad_eap_test,v 1.2 2006-06-01 08:37:18 semik Exp $
+# $Id: rad_eap_test,v 1.3 2006-07-12 14:50:36 semik Exp $
 
-#  rad_eapol_test nagios compatible wraper around eapol_test
-#  Copyright (c) 2005-2006, Pavel Pol·Ëek <polish@pf.ujep.cz>
+# rad_eapol_test nagios compatible wraper around eapol_test
+# Copyright (c) 2005-2006, Pavel Pol·Ëek <polish@pf.ujep.cz>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation.
 #
 # See README and COPYING for more details.
-
-
-#
-# obalka kolem eapol_test (z wpa_supplicanta)
-# vygeneruje konfigurak pro eapol_test a test potom provede
-#
-# wrapper script around eapol_test from wpa_supplicant project 
-# script generates configuration for eapol_test and runs it 
-# eapol_test is program for testing radius and their eap methods authentication
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 2 as
-# published by the Free Software Foundation.
-   
-# !!! to change timeout of eapol_test is needed to change source code of that
-# in eapol_test.c on line 1031 is
-# eloop_register_timeout(30, 0, eapol_test_timeout, &eapol_test, NULL);
-# where number 30 is timeout in seconds 
-# change this number to 5
-
 
 # umask
 umask 0077
@@ -48,7 +28,7 @@ OUT2=$CONF.out2
 #echo $CONF $OUT
 
 # path to eapol test
-EAPOL_PROG=./eapol_test
+EAPOL_PROG=eapol_test
 
 # default verbosity
 VERBOSE=0
