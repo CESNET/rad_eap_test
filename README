@@ -1,3 +1,30 @@
+rad_eap_test is Nagios compatible shell script used for testing RADIUS
+servers by EAP.
+
+Usage is simple (for more info run rad_eap_test withou any argument):
+
+	rad_eap_test -H <radius.server.name> \
+		-P 1812 -S <secret> -u <user@realm> \
+		-p <password> -m WPA-EAP -e PEAP
+
+as output you might get:
+
+	return code	output
+	
+	0		access-accept; <latency>
+	1		access-reject; <latency>
+	2		timeout; <timeout>
+	3		sort of config problem
+
+
+To run this script you need eapol_test binary from wpa_supplicant
+package. It's sugested to use at least 0.5.4. You will need CVS
+version 10040 to apply patches/*2006-04-11* which are necesary for
+this script. As alternative you can remove:
+	-t$TIMEOUT -M$MAC -C"$CONN_INFO"
+from calling eapol_test but in this case you will have to wait
+30seconds for timeout.
+
 eapol_test is needed compile with LEAP support. In .config should be :
 
 CONFIG_IEEE8021X_EAPOL=y
@@ -7,3 +34,8 @@ CONFIG_EAP_PEAP=y
 CONFIG_EAP_LEAP=y
 CONFIG_IEEE8021X=y
 
+you don't have to compile whole wpa_supplicant you need just
+eapol_test. So compile by typing `make eapol_test`. It is not build by
+default `make`. ;)
+
+# $Id: README,v 1.2 2006-07-12 14:49:08 semik Exp $
