@@ -1,3 +1,12 @@
+2006-07-12  Jan Tomasek  <jan@tomasek.cz>
+	    * Version: 0.15
+	    * patches/README: Added note about version which accept patches.
+	    * rad_eap_test: Housekeping in coments at begining of file.
+	    * rad_eap_test: Default EAPOL_PROG changed from ./eapol_test
+	      to eapol_test which should work for everybody who have it on
+	      PATH.
+	    * README: New README file based on mail to tf-mobility.
+
 2006-05-05 Pavel Polacek <polish@pf.ujep.cz>
 	   * Version: 0.14
 	   * new parametr -d is added for status directory, where
