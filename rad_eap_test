@@ -145,8 +145,18 @@ if [ "$EAP" = "TLS" ]; then
 		exit 3;
 	fi
 
+	if [ -f $USER_CRT ]; then
+		echo "User certificate file doesn't exist."
+		exit 3;
+	fi
+
 	if [ -z $USER_KEY ]; then
 		echo "User key file is not specified (EAP TLS method is used)."
+		exit 3;
+	fi
+
+	if [ -f $USER_KEY ]; then
+		echo "User private key file doesn't exist."
 		exit 3;
 	fi
 else
