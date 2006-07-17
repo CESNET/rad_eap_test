@@ -108,70 +108,76 @@ while true ; do
 		-j) USER_CRT=$2; shift 2;;
 		-a) CA_CRT=$2; shift 2;;
     --) break ;;
-    *) echo "Unknown parametr"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
+    *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
   esac
 done
 
 # necessarily options
 if [ -z $ADRESS ]; then
-  echo "Address of radius server (option -H) is not specified."
+  echo "Address of radius server is not specified. (option -H)"
   exit 3;
 fi
 
 if [ -z $PORT ]; then
-  echo "Port of radius server (option -P) is not specified."
+  echo "Port of radius server is not specified. (option -P)"
   exit 3;
 fi
 
 if [ -z $SECRET ]; then
-  echo "Secret for radius server communication (option -S) is not specified."
+  echo "Secret for radius server communication is not specified. (option -S)"
   exit 3;
 fi
 
 if [ -z $USERNAME ]; then
-  echo "Username (option -u) is not specified."
+  echo "Username is not specified. (option -u)"
   exit 3;
 fi
 
 if [ -z $EAP ]; then
-  echo "EAP method (option -e) is not specified."
+  echo "EAP method is not specified. (option -e)"
   exit 3;
 fi
 
 if [ "$EAP" = "TLS" ]; then
 	# we need certificate instead of password
   if [ -z $USER_CRT ]; then
-		echo "User certificate file is not specified (EAP TLS method is used)."
+		echo "User certificate file is not specified (EAP TLS method is used). (option -j)"
 		exit 3;
 	fi
 
-	if [ -f $USER_CRT ]; then
-		echo "User certificate file doesn't exist."
+	if [ ! -f $USER_CRT ]; then
+		echo "User certificate file doesn't exist. (option -j)"
 		exit 3;
 	fi
 
 	if [ -z $USER_KEY ]; then
-		echo "User key file is not specified (EAP TLS method is used)."
+		echo "User key file is not specified (EAP TLS method is used). (option -k)"
 		exit 3;
 	fi
 
-	if [ -f $USER_KEY ]; then
-		echo "User private key file doesn't exist."
+	if [ ! -f $USER_KEY ]; then
+		echo "User private key file doesn't exist. (option -k)"
 		exit 3;
 	fi
 else
   
   if [ -z $PASSWORD ]; then
-    echo "Password (option -p) is not specified."
+    echo "Password is not specified. (option -p)"
     exit 3;
   fi
 fi
 
 if [ -z $METHOD ]; then
-  echo "Method (option -m) is not specified."
+  echo "Method is not specified. (option -m)"
   exit 3;
 fi
 
+if [ -z $CA_CRT ]; then
+	if [ ! -f $CA_CRT ]; then
+		echo "Certificate authority file doesn't exist. (option -a)";
+		exit 3;
+	fi
+fi
 
 # generation of configuration
 echo "network={" > $CONF
