@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.8 2006-07-21 09:10:42 semik Exp $                       
+# $Id: rad_eap_test,v 1.9 2006-07-21 09:46:00 semik Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
 # Copyright (c) 2005-2006, Pavel Poláček <polish@pf.ujep.cz>                   
@@ -229,7 +229,7 @@ trap garbage INT
 
 BEGIN=`date +%s`
 
-echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR"
+#echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR"
 
 # try authenticate
 if [ $VERBOSE -eq 0 ]; then
