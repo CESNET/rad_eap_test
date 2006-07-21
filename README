@@ -38,4 +38,6 @@ you don't have to compile whole wpa_supplicant you need just
 eapol_test. So compile by typing `make eapol_test`. It is not build by
 default `make`. ;)
 
-# $Id: README,v 1.2 2006-07-12 14:49:08 semik Exp $
+Latest version is available at http://wiki.eduroam.cz/rad_eap_test/
+
+# $Id: README,v 1.3 2006-07-21 08:45:24 semik Exp $
