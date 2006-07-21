@@ -1,5 +1,25 @@
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.18
+	    * rad_eap_test:
+	        - EAP is better to write in upcase, same with RADIUS.
+		- Space after opening ( or before closing ) is UGLY!
+	        - Added support for TTLS, don't forget to recompile
+	          eapol_test with new config (see README).  Bit more
+	          usefull message when "Probably configuration error"
+	          raise.
+	        - Fixed eapol_test program checks. Script is now able to
+	          work with exact path to program, program mentioned only by
+	          it's name (and being on $PATH) or with program in actual
+	          directory.
+	        - Removed debug message.
+	    * README:
+	        - Added TTLS to config example.
+  	        - Added url to wpa_supplicant.
+   	    * Makefile:
+	        - Fixed permisions in distribution package. 
+
+2006-07-21  Jan Tomasek  <jan@tomasek.cz>
+	    * Version: 0.18
 	    * Makefile: Publish files into directory rad_eap_test-<version> and
 	      publish also ChangeLog file.
 
