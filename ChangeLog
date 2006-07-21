@@ -1,5 +1,5 @@
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
-	    * Version: 0.18
+	    * Version: 0.19
 	    * rad_eap_test:
 	        - EAP is better to write in upcase, same with RADIUS.
 		- Space after opening ( or before closing ) is UGLY!
