@@ -1,4 +1,8 @@
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
+	    * Version: 0.18
+	    * Makefile: Publish files into directory rad_eap_test-<version>.
+
+2006-07-21  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.17
 	    * rad_eap_test: Changed return code 5 and 10 to 3 to be nagios
 	      compatible.
