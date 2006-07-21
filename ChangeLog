@@ -1,3 +1,12 @@
+2006-07-17  polish  <polish@pf.ujep.cz>
+	    * Version: 0.16
+	    * rad_eap_test: Script test if certificate authority file
+	      exist.  Solve bug of previous version, where tests if user
+	      certificate files exist was negated.
+	    * rad_eap_test: Scripts test existency of certificate files
+	      when tls eap method is used.
+	    * rad_eap_test: EAP TLS method is added.
+
 2006-07-12  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.15
 	    * patches/README: Added note about version which accept patches.
