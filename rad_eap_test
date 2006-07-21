@@ -1,17 +1,16 @@
 #!/bin/bash
-#
-# obalka kolem eapol_test (z wpa_supplicanta)
-# vygeneruje konfigurak pro eapol_test a test potom provede
-#
-# wrapper script around eapol_test from wpa_supplicant project 
-# script generates configuration for eapol_test and runs it 
-# eapol_test is program for testing radius and their eap methods authentication
 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 2 as
-# published by the Free Software Foundation.
+# $Id: rad_eap_test,v 1.7 2006-07-21 08:43:55 semik Exp $                       
+                                                                                
+# rad_eapol_test nagios compatible wraper around eapol_test                     
+# Copyright (c) 2005-2006, Pavel Poláček <polish@pf.ujep.cz>                   
+#                                                                               
+# This program is free software; you can redistribute it and/or modify          
+# it under the terms of the GNU General Public License version 2 as             
+# published by the Free Software Foundation.                                    
+#                                                                              
+# See README and COPYING for more details.
    
-
 # umask
 umask 0077
 
