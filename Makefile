@@ -11,9 +11,12 @@ ${DISTRIBUTION}: ${FILES}
 	 tar jcf ${DISTRIBUTION} ${FILES}; \
 	 cd /tmp/rad_eap_test-${VERSION}; \
 	 tar jxf ${DISTRIBUTION}; \
+	 find -type f -exec chmod 644 {} \; ; \
+	 chmod 755 rad_eap_test ; \
+	 find -type d -exec chmod 755 {} \; ; \
 	 cd ..; \
 	 pwd ;\
-	 tar jcf ${DISTRIBUTION} rad_eap_test-${VERSION})
+	 tar -j -c --owner=root --group=staff -f ${DISTRIBUTION} rad_eap_test-${VERSION})
 
 tar: ${DISTRIBUTION}
 
