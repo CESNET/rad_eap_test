@@ -1,6 +1,7 @@
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.18
-	    * Makefile: Publish files into directory rad_eap_test-<version>.
+	    * Makefile: Publish files into directory rad_eap_test-<version> and
+	      publish also ChangeLog file.
 
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.17
