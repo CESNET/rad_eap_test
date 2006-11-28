@@ -1,0 +1,125 @@
+.TH "rad_eap_test" "1" "0.16" "polish@pf.ujep.cz" "Shell script"
+.SH "NAME"
+.LP 
+rad_eap_test \- Nagios compatible shell script used for testing radius EAP methods
+.SH "SYNTAX"
+.LP 
+rad_eap_test \fI\-H <address>\fP \fI\-P <port>\fP \fI\-S <secret>\fP \fI\-u <username>\fP \fI\-p <password>\fP [\fI\-t <timeout>\fP] \fI\-m <method>\fP [\fI\-v\fP] [\fI\-c\fP] \fI\-s <ssid>\fP \fI\-e <method>\fP [\fI\-M <mac_addr>\fP] [\fI\-i <info>\fP] [\fI\-d <directory>\fP] [\fI\-k <key_file>\fP] [\fI\-j <cert_file>\fP] [\fI\-a <ca_cert_file>\fP] [\fI\-A <anonymous_id>\fP]
+.SH "DESCRIPTION"
+.LP 
+\fBrad_eap_test\fR is used to test availability of radius servers in monitoring solutions as nagios. \fBrad_eap_test\fR is only wrapper shell script around eapol_test from wpa_supplicant project. \fBrad_eap_test\fR generates configuration for eapol_test, runs it and after processing eapol_test messages returns status code. Status code is processed by monitoring tools as nagios.
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-H\fR <\fIaddress\fP>
+Address of radius server
+.TP 
+\fB\-P\fR <\fIport\fP>
+Port of radius server
+.TP 
+\fB\-S\fR <\fIsecret\fP>
+Secret for radius server communication
+.TP 
+\fB\-u\fR <\fIusername\fP>
+Username ( user@realm )
+.TP 
+\fB\-p\fR <\fIpassword\fP>
+Password
+.TP 
+\fB\-t\fR <\fItimeout\fP>
+Timeout (default is 5 seconds)
+.TP 
+\fB\-m\fR <\fImethod\fP>
+Method ( IEEE8021X | WPA\-EAP )
+.TP 
+\fB\-v\fR
+Verbose ( prints decoded last Access\-accept packet)
+.TP 
+\fB\-c\fR
+Prints all packets decoded 
+.TP 
+\fB\-s\fR <\fIssid\fP>
+SSID
+.TP 
+\fB\-e\fR <\fImethod\fP>
+EAP method ( PEAP | TLS | TTLS | LEAP )
+.TP 
+\fB\-M\fR <\fImac_addr\fP>
+MAC address in xx:xx:xx:xx:xx:xx format
+.TP 
+\fB\-i\fR <\fIconnect_info\fP>
+Connection info (in radius log : client from connect_info)
+.TP 
+\fB\-d\fR <\fIdirectory\fP>
+status directory ( unified identifier of packets )
+.TP 
+\fB\-k\fR <\fIuser_key_file\fP>
+user certificate key file
+.TP 
+\fB\-j\fR <\fIuser_cert_file\fP>
+user certificate file
+.TP 
+\fB\-a\fR <\fIca_cert_file\fP>
+certificate of CA
+.TP 
+\fB\-A\fR <\fIanonymous_identity\fP>
+anonymous identity (anonymous@realm)
+.SH "EXAMPLES"
+.LP 
+.TP 
+rad_eap_test \-H <radius.server.name> \-P 1812 \-S <secret> \-u <user@realm> \-p <password> \-m WPA_EAP \-e PEAP
+PEAP test
+.TP 
+rad_eap_test \-H <radius.server.name> \-P 1812 \-S <secret> \-u <user@realm> \-p <password> \-m IEEE8021X \-e LEAP
+LEAP test
+.TP 
+rad_eap_test \-H <radius.server.name> \-P 1812 \-S <secret> \-u <user@realm> \-k <user_key> \-j <user_cert> \-a <ca_cert> \-m IEEE8021X \-e TLS
+TLS test
+.SH "EXIT STATUS"
+.LP 
+.TP 
+\fB0\fR
+access\-accept; <latency>
+.TP 
+\fB1\fR
+access\-recejt; <latency>
+.TP 
+\fB2\fR
+timeout; <timeout>
+.TP 
+\fB3\fR
+sort of config problem
+.SH "OTHER"
+.LP 
+\fBEapol_test compilation\fR
+
+1) Download wpa_supplicant source from http://hostap.epitest.fi/wpa_supplicant/ (stable, development or snapshot version) (or you can download hostap, where wpa_supplicant is in the package)
+
+2) Untar sources : tar xvzf wpa_supplicant.tar.gz 
+
+3) Create .config file in wpa_supplicant directory with content follows :
+.br 
+CONFIG_IEEE8021X_EAPOL=y
+.br 
+CONFIG_EAP_MSCHAPV2=y
+.br 
+CONFIG_EAP_TLS=y
+.br 
+CONFIG_EAP_PEAP=y
+.br 
+CONFIG_EAP_LEAP=y
+.br 
+CONFIG_EAP_TTLS=y
+.br 
+CONFIG_IEEE8021X=y
+.br 
+
+4) Compile eapol_test : make eapol_test 
+.br 
+After compilation you have eapol_test binary, which you can use with rad_eap_test script.
+
+.SH "AUTHORS"
+.LP 
+Pavel Polacek <polish@pf.ujep.cz>
+.br 
+Jan Tomasek <jan.tomasek@cesnet.cz>
