@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.14 2006-11-28 09:37:14 polish Exp $                       
+# $Id: rad_eap_test,v 1.15 2006-11-28 10:23:28 polish Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
 # Copyright (c) 2005-2006, Pavel Poláček <polish@pf.ujep.cz>                   
@@ -69,24 +69,24 @@ if [ -z $1 ] ; then echo "# wrapper script around eapol_test from wpa_supplicant
 # eapol_test is program for testing RADIUS and their EAP methods authentication
 
 Parameters : 
--H - Adress of radius server
--P - Port of radius server
--S - Secret for radius server communication
--u - Username (test@test.com)
--A - Anonymous identity (anonymous@test.com)
--p - Password
--t - Timeout 
--m - Method (WPA-EAP)
+-H <address> - Address of radius server
+-P <port> - Port of radius server
+-S <secret> - Secret for radius server communication
+-u <username> - Username (test@test.com)
+-A <anonymous_id> - Anonymous identity (anonymous@test.com)
+-p <password> - Password
+-t <timeout> - Timeout (default is 5 seconds)
+-m <method> - Method (WPA-EAP | IEEE8021X )
 -v - Verbose (prints decoded last Access-accept packet)
 -c - Prints all packets decoded 
--s - SSID
--e - EAP method (PEAP, TTLS)
--M - MAC address in xx:xx:xx:xx:xx:xx format
--i - Connection info
--d - status directory (unified identifier of packets)
--k - user certificate key file
--j - user certificate file
--a - certificate of CA
+-s <ssid> - SSID
+-e <method> - EAP method (PEAP | TLS | TTLS | LEAP)
+-M <mac_addr> - MAC address in xx:xx:xx:xx:xx:xx format
+-i <connect_info> - Connection info (in radius log: connect from <connect_info>)
+-d <directory> - status directory (unified identifier of packets)
+-k <user_key_file> - user certificate key file
+-j <user_cert_file> - user certificate file
+-a <ca_cert_file> - certificate of CA
 " >&2 ; exit 1 ; fi
 
 eval set -- "$TEMP"
