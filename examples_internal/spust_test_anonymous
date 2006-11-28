@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# test configuration for radius_test script
+# test should be succesfull without verbose mode
+#
+
+# -H - radius server (example: radius.world.com)
+# -P - destination port
+# -S - password for communication between client (authenticatior) and radius
+# -u - account (example: doe@world.com)
+# -p - password 
+# -m - authentication method
+# -e - EAP protocol
+
+cd ..
+./rad_eap_test -H radius -P 1812 -S trouba61 -u account -p pass_iiii -m WPA-EAP -e PEAP -A account@cesnet.cz 
+
