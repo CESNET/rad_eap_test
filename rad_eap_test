@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.13 2006-11-28 09:31:08 polish Exp $                       
+# $Id: rad_eap_test,v 1.14 2006-11-28 09:37:14 polish Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
 # Copyright (c) 2005-2006, Pavel Poláček <polish@pf.ujep.cz>                   
@@ -81,7 +81,6 @@ Parameters :
 -c - Prints all packets decoded 
 -s - SSID
 -e - EAP method (PEAP, TTLS)
--t - Timeout
 -M - MAC address in xx:xx:xx:xx:xx:xx format
 -i - Connection info
 -d - status directory (unified identifier of packets)
