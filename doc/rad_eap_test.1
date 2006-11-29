@@ -1,4 +1,4 @@
-.TH "rad_eap_test" "1" "0.16" "polish@pf.ujep.cz" "Shell script"
+.TH "rad_eap_test" "1" "0.20" "polish@pf.ujep.cz" "Shell script"
 .SH "NAME"
 .LP 
 rad_eap_test \- Nagios compatible shell script used for testing radius EAP methods
@@ -21,7 +21,7 @@ Port of radius server
 Secret for radius server communication
 .TP 
 \fB\-u\fR <\fIusername\fP>
-Username ( user@realm )
+Username (user@realm)
 .TP 
 \fB\-p\fR <\fIpassword\fP>
 Password
@@ -30,10 +30,10 @@ Password
 Timeout (default is 5 seconds)
 .TP 
 \fB\-m\fR <\fImethod\fP>
-Method ( IEEE8021X | WPA\-EAP )
+Method (IEEE8021X | WPA\-EAP)
 .TP 
 \fB\-v\fR
-Verbose ( prints decoded last Access\-accept packet)
+Verbose (prints decoded last Access\-accept packet)
 .TP 
 \fB\-c\fR
 Prints all packets decoded 
@@ -42,7 +42,7 @@ Prints all packets decoded
 SSID
 .TP 
 \fB\-e\fR <\fImethod\fP>
-EAP method ( PEAP | TLS | TTLS | LEAP )
+EAP method (PEAP | TLS | TTLS | LEAP)
 .TP 
 \fB\-M\fR <\fImac_addr\fP>
 MAC address in xx:xx:xx:xx:xx:xx format
@@ -51,7 +51,7 @@ MAC address in xx:xx:xx:xx:xx:xx format
 Connection info (in radius log : client from connect_info)
 .TP 
 \fB\-d\fR <\fIdirectory\fP>
-status directory ( unified identifier of packets )
+status directory (unified identifier of packets)
 .TP 
 \fB\-k\fR <\fIuser_key_file\fP>
 user certificate key file
@@ -95,9 +95,9 @@ sort of config problem
 
 1) Download wpa_supplicant source from http://hostap.epitest.fi/wpa_supplicant/ (stable, development or snapshot version) (or you can download hostap, where wpa_supplicant is in the package)
 
-2) Untar sources : tar xvzf wpa_supplicant.tar.gz 
+2) Untar sources: tar xvzf wpa_supplicant.tar.gz 
 
-3) Create .config file in wpa_supplicant directory with content follows :
+3) Create .config file in wpa_supplicant directory with content follows:
 .br 
 CONFIG_IEEE8021X_EAPOL=y
 .br 
@@ -114,7 +114,7 @@ CONFIG_EAP_TTLS=y
 CONFIG_IEEE8021X=y
 .br 
 
-4) Compile eapol_test : make eapol_test 
+4) Compile eapol_test: make eapol_test 
 .br 
 After compilation you have eapol_test binary, which you can use with rad_eap_test script.
 

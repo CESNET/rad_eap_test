@@ -1,4 +1,8 @@
 2006-11-29  Pavel Polacek <polish@pf.ujep.cz>
+            * Version: 0.21
+	    * Added man page.
+
+2006-11-29  Pavel Polacek <polish@pf.ujep.cz>
 	    * Version: 0.20
 	    * rad_eap_test:
 	        - added -A switch for annymous = external identity
