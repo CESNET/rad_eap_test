@@ -17,6 +17,9 @@ as output you might get:
 	3		sort of config problem
 
 
+**UPDATE** Patching is no longer needed. All you need is in upstream
+version. Following paragraph will be removed in near future.
+
 To run this script you need eapol_test binary from wpa_supplicant
 package. It's sugested to use at least 0.5.4. You will need CVS
 version 10040 to apply patches/*2006-04-11* which are necesary for
@@ -42,4 +45,4 @@ default `make`. ;)
 wpa_supplicant home is http://hostap.epitest.fi/wpa_supplicant/
 Latest version is available at http://wiki.eduroam.cz/rad_eap_test/
 
-# $Id: README,v 1.5 2006-07-21 10:50:40 semik Exp $
+# $Id: README,v 1.6 2006-11-29 07:21:12 semik Exp $

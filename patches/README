@@ -1,3 +1,5 @@
+# NOTE: No need to patch upstream code anymore! Patches are here keept
+# just for record.
 2006-05-04:
 	* eapol_test.c.2006-05-05.diff
 	* Patch implement storage of Identifier in local file. It

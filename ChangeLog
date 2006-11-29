@@ -1,3 +1,10 @@
+2006-11-29  Pavel Polacek <polish@pf.ujep.cz>
+	    * Version: 0.20
+	    * rad_eap_test:
+	        - added -A switch for annymous = external identity
+	    * README:
+	        - added note on patches
+	
 2006-07-21  Jan Tomasek  <jan@tomasek.cz>
 	    * Version: 0.19
 	    * rad_eap_test:
