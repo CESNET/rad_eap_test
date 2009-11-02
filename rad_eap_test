@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.18 2009-04-17 07:43:01 polish Exp $                       
+# $Id: rad_eap_test,v 1.19 2009-11-02 15:48:58 polish Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
-# Copyright (c) 2005-2006, Pavel Poláček <polish@pf.ujep.cz>                   
+# Copyright (c) 2005-2009, Pavel Poláček <pavel.polacek@ujep.cz>                   
 #                                                                               
 # This program is free software; you can redistribute it and/or modify          
 # it under the terms of the GNU General Public License version 2 as             
@@ -28,7 +28,7 @@ OUT2=$CONF.out2
 #echo $CONF $OUT
 
 # path to eapol test
-EAPOL_PROG=./eapol_test
+EAPOL_PROG=bin/eapol_test
 
 # default verbosity
 VERBOSE=0
@@ -50,6 +50,9 @@ RET_SUCC=3
 RET_EAP_FAILED=4
 RET_RADIUS_NOT_AVAIL=5
 
+#cleanup?
+CLEANUP=1
+
 # exist eapol_test program ?
 if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     if [ ! -x `which $EAPOL_PROG` ]; then # is program on path?
@@ -62,7 +65,8 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     fi
 fi
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:vc -- "$@"`
+#TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:vc -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:vcN -- "$@"`
 
 if [ -z $1 ] ; then echo "# wrapper script around eapol_test from wpa_supplicant project 
 # script generates configuration for eapol_test and runs it 
@@ -88,6 +92,8 @@ Parameters :
 -l <user_key_file_password> - password for user certificate key file
 -j <user_cert_file> - user certificate file
 -a <ca_cert_file> - certificate of CA
+-2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2)
+-N - Identify and do not delete temporary files
 " >&2 ; exit 1 ; fi
 
 eval set -- "$TEMP"
@@ -115,6 +121,8 @@ while true ; do
     -a) CA_CRT=$2; shift 2;;
     -A) ANOMYM_ID=$2; shift 2;;
 		-l) KEY_PASS=$2; shift 2;;
+    -2) PHASE2=$2; shift 2;;
+    -N) CLEANUP=0; shift ;;
     --) break ;;
     *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
   esac
@@ -187,9 +195,17 @@ if [ -z $CA_CRT ]; then
 	fi
 fi
 
+if [ -z $SSID ]; then
+	SSID="eduroam";
+fi
+
+if [ -z $PHASE2 ]; then
+	PHASE2="MSCHAPV2"
+fi
+
 # generation of configuration
 echo "network={" > $CONF
-echo "  ssid=\"eduroam\"" >> $CONF
+echo "  ssid=\"$SSID\"" >> $CONF
 echo "  key_mgmt=$METHOD" >> $CONF
 
 echo "  eap=$EAP" >> $CONF
@@ -197,7 +213,7 @@ echo "  eap=$EAP" >> $CONF
 if [ "$EAP" = "PEAP" -o "$EAP" = "TTLS" ]; then 
   echo "  pairwise=CCMP TKIP" >> $CONF
   echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
-  echo "  phase2=\"auth=MSCHAPV2\"" >> $CONF
+  echo "  phase2=\"auth=$PHASE2\"" >> $CONF
 fi 
 
 if [ ! -z $CA_CRT ]; then
@@ -236,9 +252,17 @@ fi
 
 # garbage
 garbage() {
-	#echo Vyjimka : mazu soubory
-	rm $CONF $OUT
-	rmdir $MYTMPDIR
+	if [ $CLEANUP -eq 1 ]; then
+    # exception occur => remove files
+		rm $CONF $OUT
+		rmdir $MYTMPDIR
+	else 
+	  if [ $CLEANUP -eq 0 ]; then
+		echo "Leaving temporary files in $MYTMPDIR"
+		echo -e "\tConfiguration: $CONF"
+		echo -e "\tOutput: $OUT"
+	  fi
+	fi
 }
 
 trap garbage INT
@@ -284,8 +308,7 @@ if [ $RETURN_CODE -eq $RET_SUCC ]; then
 	  cat $OUT
   fi
 
-  rm $CONF $OUT
-  rmdir $MYTMPDIR
+  garbage
   exit 0;
 fi
 
@@ -297,8 +320,7 @@ if [ $RETURN_CODE -eq $RET_EAP_FAILED ]; then
 	  cat $OUT
   fi
 
-  rm $CONF $OUT
-  rmdir $MYTMPDIR
+  garbage
   exit 1;
 fi
 
@@ -311,8 +333,7 @@ if [ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]; then
 	  cat $OUT
   fi
 
-  rm $CONF $OUT
-  rmdir $MYTMPDIR
+  garbage
   exit 2;
 fi
 
