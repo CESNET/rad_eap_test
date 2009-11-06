@@ -1,17 +1,22 @@
-2009-11-2	Pavel Polacek <pavel.polacek@ujep.cz>
-	* Version: 0.22 - code by David Worth
-	* added a command-line option (-2 <type>) to change the phase-2
-authentication type so the user may specify PAP/CHAP/MSCHAPv2.  I made sure
-that if this option is omitted the code still defaults to MSCHAPv2.
+2009-11-02  Pavel Polacek <pavel.polacek@ujep.cz>
+	    * Version: 0.23
+	    * Code from David Worth.
+	    * added a command-line option (-2 <type>) to change the phase-2
+	      authentication type so the user may specify PAP/CHAP/MSCHAPv2.
+	      I made sure that if this option is omitted the code still
+	      defaults to MSCHAPv2.
+	    * added a command-line option (-N) to not delete the generated
+	      configuration files and let the user know where they are.
+	      This is helpful in debugging or setting up permanent configuration
+	      files if you need them. I then changed the garbage function
+	      to check the -N option above. I also removed the explicit
+	      deletion of the temp files in several places and called
+	      the garbage function instead.
 
-	* added a command-line option (-N) to not delete the generated configuration
-files and let the user know where they are.  This is helpful in debugging or
-setting up permanent configuration files if you need them.  I then changed
-the garbage function to check the -N option above.  I also removed the
-explicit deletion of the temp files in several places and called the garbage
-function instead.
-
-
+2009-08-03  Pavel Polacek <polish@pf.ujep.cz>
+	    * Version: 0.22
+	    * Support for EAP-TLS        
+	
 2006-11-29  Pavel Polacek <polish@pf.ujep.cz>
             * Version: 0.21
 	    * Added man page.
