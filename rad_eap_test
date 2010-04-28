@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.19 2009-11-02 15:48:58 polish Exp $                       
+# $Id: rad_eap_test,v 1.20 2010-04-28 06:53:07 polish Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
 # Copyright (c) 2005-2009, Pavel Poláček <pavel.polacek@ujep.cz>                   
@@ -65,10 +65,10 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     fi
 fi
 
-#TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:vc -- "$@"`
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:vcN -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:vcNh -- "$@"`
 
-if [ -z $1 ] ; then echo "# wrapper script around eapol_test from wpa_supplicant project 
+myhelp() {
+  echo "# wrapper script around eapol_test from wpa_supplicant project 
 # script generates configuration for eapol_test and runs it 
 # eapol_test is program for testing RADIUS and their EAP methods authentication
 
@@ -94,7 +94,14 @@ Parameters :
 -a <ca_cert_file> - certificate of CA
 -2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2)
 -N - Identify and do not delete temporary files
-" >&2 ; exit 1 ; fi
+-h - show this message
+" >&2; 
+  exit 1;
+}
+
+if [ -z $1 ] ; then 
+  myhelp
+fi
 
 eval set -- "$TEMP"
 
@@ -120,9 +127,10 @@ while true ; do
     -j) USER_CRT=$2; shift 2;;
     -a) CA_CRT=$2; shift 2;;
     -A) ANOMYM_ID=$2; shift 2;;
-		-l) KEY_PASS=$2; shift 2;;
+    -l) KEY_PASS=$2; shift 2;;
     -2) PHASE2=$2; shift 2;;
     -N) CLEANUP=0; shift ;;
+    -h) myhelp; shift ;;
     --) break ;;
     *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
   esac
@@ -340,3 +348,5 @@ fi
 # other case is probably error
 echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE;
 exit 3;
+
+
