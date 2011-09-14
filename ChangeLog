@@ -1,3 +1,7 @@
+2011-09-14  Pavel Polacek <pavel.polacek@ujep.cz>
+			* Version: 0.25
+			* New option -x subject_match, feature request by Stefan Winter
+
 2009-11-02  Pavel Polacek <pavel.polacek@ujep.cz>
 			* Version: 0.24
 			* Patch from David Worth, which improve help
