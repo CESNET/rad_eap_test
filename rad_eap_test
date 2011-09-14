@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: rad_eap_test,v 1.20 2010-04-28 06:53:07 polish Exp $                       
+# $Id: rad_eap_test,v 1.21 2011-09-14 12:00:21 polish Exp $                       
                                                                                 
 # rad_eapol_test nagios compatible wraper around eapol_test                     
 # Copyright (c) 2005-2009, Pavel Poláček <pavel.polacek@ujep.cz>                   
@@ -65,7 +65,7 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     fi
 fi
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:vcNh -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNh -- "$@"`
 
 myhelp() {
   echo "# wrapper script around eapol_test from wpa_supplicant project 
@@ -93,6 +93,7 @@ Parameters :
 -j <user_cert_file> - user certificate file
 -a <ca_cert_file> - certificate of CA
 -2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2)
+-x <subject_match> - Substring to be matched against the subject of the authentication server certificate.
 -N - Identify and do not delete temporary files
 -h - show this message
 " >&2; 
@@ -130,6 +131,7 @@ while true ; do
     -l) KEY_PASS=$2; shift 2;;
     -2) PHASE2=$2; shift 2;;
     -N) CLEANUP=0; shift ;;
+    -x) SUBJ_MATCH=$2; shift 2;;
     -h) myhelp; shift ;;
     --) break ;;
     *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
@@ -243,6 +245,11 @@ if [ "$EAP" = "TLS" ]; then
 else
   echo "  password=\"$PASSWORD\"" >> $CONF
 fi
+
+if [ -n "$SUBJ_MATCH" ]; then
+  echo "  subject_match=\"$SUBJ_MATCH\"" >> $CONF
+fi
+
 echo "}" >> $CONF
 
 #echo $EAP
