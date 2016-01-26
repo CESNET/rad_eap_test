@@ -65,7 +65,7 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     fi
 fi
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNh -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:Ch -- "$@"`
 
 myhelp() {
   echo "# wrapper script around eapol_test from wpa_supplicant project 
@@ -95,6 +95,9 @@ Parameters :
 -2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2)
 -x <subject_match> - Substring to be matched against the subject of the authentication server certificate.
 -N - Identify and do not delete temporary files
+-O <domain.edu.cctld> - Operator-Name value in domain name format
+-I <ip address> - explicitly specify NAS-IP-Address
+-C - request Chargeable-User-Identity
 -h - show this message
 " >&2; 
   exit 1;
@@ -132,6 +135,9 @@ while true ; do
     -2) PHASE2=$2; shift 2;;
     -N) CLEANUP=0; shift ;;
     -x) SUBJ_MATCH=$2; shift 2;;
+    -O) OPERATOR_NAME=$2; shift 2;;
+    -I) NAS_IP_ADDRESS=$2; shift 2;;
+    -C) REQUEST_CUI="YES"; shift ;;
     -h) myhelp; shift ;;
     --) break ;;
     *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
@@ -213,6 +219,19 @@ if [ -z $PHASE2 ]; then
 	PHASE2="MSCHAPV2"
 fi
 
+if [ -n "$OPERATOR_NAME" ] ; then
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N126:s:$OPERATOR_NAME"
+fi
+
+if [ -n "$NAS_IP_ADDRESS" ] ; then
+        NAS_IP_ADDRESS_HEX=$( printf '%02x%02x%02x%02x' $( echo "$NAS_IP_ADDRESS" | tr '.' ' ' ) )
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N4:x:$NAS_IP_ADDRESS_HEX"
+fi
+
+if [ -n "$REQUEST_CUI" ] ; then
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
+fi
+
 # generation of configuration
 echo "network={" > $CONF
 echo "  ssid=\"$SSID\"" >> $CONF
@@ -284,16 +303,16 @@ trap garbage INT
 
 BEGIN=`date +%s`
 
-#echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR"
+#echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR"
 
 # try authenticate
 if [ $VERBOSE -eq 0 ]; then
-  $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR | awk '/^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
+  $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR | awk '/^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
 else
   if [ $VERBOSE -eq 1 ]; then
-    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';}  /Access-Reject/ {exit '$RET_EAP_FAILED';} '  > $OUT2
+    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';}  /Access-Reject/ {exit '$RET_EAP_FAILED';} '  > $OUT2
   else
-    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /polish/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';}  /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
+    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /polish/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';}  /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
   fi
 fi
 
