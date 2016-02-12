@@ -43,5 +43,5 @@ eapol_test. So compile by typing `make eapol_test`. It is not build by
 default `make`. ;)
 
 wpa_supplicant home is http://hostap.epitest.fi/wpa_supplicant/
-Latest version is available at http://wiki.eduroam.cz/rad_eap_test/
+Latest version is available at http://www.eduroam.cz/rad_eap_test/
 
