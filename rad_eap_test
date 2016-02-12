@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# $Id: rad_eap_test,v 1.23 2011-09-14 12:13:24 polish Exp $                       
-                                                                                
 # rad_eapol_test nagios compatible wraper around eapol_test                     
-# Copyright (c) 2005-2009, Pavel Poláček <pavel.polacek@ujep.cz>                   
+# Copyright (c) 2005-2016 CESNET, z.s.p.o.
+# Author: Pavel Poláček <pavel.polacek@ujep.cz>                   
 #                                                                               
 # This program is free software; you can redistribute it and/or modify          
 # it under the terms of the GNU General Public License version 2 as             

@@ -3,7 +3,7 @@
 VERSION=$(shell cat ChangeLog  |grep Version | sed "s/.*: *//" | head -1)
 DISTRIBUTION=/tmp/rad_eap_test-${VERSION}.tar.bz2
 FILES=rad_eap_test README ChangeLog COPYING doc/rad_eap_test.1 $(wildcard patches/*)
-PUB_TARGET=semik@wiki.eduroam.cz:/var/www/non-ssl/rad_eap_test/
+PUB_TARGET=root@www.eduroam.cz:/var/www/rad_eap_test/
 PUB_FILES=${DISTRIBUTION} README ChangeLog rad_eap_test.html
 
 rad_eap_test.html: doc/rad_eap_test.1

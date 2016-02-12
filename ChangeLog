@@ -1,3 +1,7 @@
+2016-02-12  Vladimir Mencl <vladimir.mencl@reannz.co.nz>
+	* Version: 0.26
+	* Add options for passing OperatorName, NAS-IP-Address, and requesting Chargable-User-Identity
+
 2011-09-14  Pavel Polacek <pavel.polacek@ujep.cz>
 			* Version: 0.25
 			* New option -x subject_match, feature request by Stefan Winter
