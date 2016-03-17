@@ -13,19 +13,6 @@
 # umask
 umask 0077
 
-# temporary file of eapol_test configuration 
-if [ -z $TMPDIR ]; then
-  MYTMPDIR=`mktemp -d /tmp/rad_eap_test.XXXXXX`
-else
-  MYTMPDIR=`mktemp -d $TMPDIR/rad_eap_test.XXXXXX`
-fi
-
-CONF=$MYTMPDIR/tmp-$$
-OUT=$CONF.out
-OUT2=$CONF.out2
-
-#echo $CONF $OUT
-
 # path to eapol test
 EAPOL_PROG=bin/eapol_test
 
@@ -230,6 +217,19 @@ fi
 if [ -n "$REQUEST_CUI" ] ; then
 	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
 fi
+
+# temporary file of eapol_test configuration
+if [ -z $TMPDIR ]; then
+  MYTMPDIR=`mktemp -d /tmp/rad_eap_test.XXXXXX`
+else
+  MYTMPDIR=`mktemp -d $TMPDIR/rad_eap_test.XXXXXX`
+fi
+
+CONF=$MYTMPDIR/tmp-$$
+OUT=$CONF.out
+OUT2=$CONF.out2
+
+#echo $CONF $OUT
 
 # generation of configuration
 echo "network={" > $CONF
