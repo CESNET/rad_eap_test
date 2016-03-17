@@ -218,6 +218,22 @@ if [ -n "$REQUEST_CUI" ] ; then
 	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
 fi
 
+# address may be address or ip address
+IP=`echo $ADRESS | grep --regexp="^[[:digit:]+\.[:digit:]+\.[:digit:]+\.[:digit:]]"`
+if [ -z "$IP" ]; then
+  #IP=`host $ADRESS | tail -n 1 | awk '{print $3}'`
+  IP=`dig +noall +answer +search $ADRESS | tr \\\t ' ' | grep ' IN A ' | sed "s/.* IN A //"`
+fi
+
+# Sanity check: did we get an IP address?
+if [ -z "$IP" ] ; then
+  echo "Hostname $ADRESS could not be resolved to an IP address."
+  exit 2;
+fi
+
+#echo $IP
+
+
 # temporary file of eapol_test configuration
 if [ -z $TMPDIR ]; then
   MYTMPDIR=`mktemp -d /tmp/rad_eap_test.XXXXXX`
@@ -272,16 +288,6 @@ echo "}" >> $CONF
 
 #echo $EAP
 #cat $CONF
-
-# address may be address or ip address
-IP=`echo $ADRESS | grep --regexp="^[[:digit:]+\.[:digit:]+\.[:digit:]+\.[:digit:]]"`
-if [ -z "$IP" ]; then 
-  #IP=`host $ADRESS | tail -n 1 | awk '{print $3}'`
-  IP=`dig +noall +answer +search $ADRESS | tr \\\t ' ' | grep ' IN A ' | sed "s/.* IN A //"`
-fi
-
-
-#echo $IP
 
 # garbage
 garbage() {
