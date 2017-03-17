@@ -345,7 +345,7 @@ fi
 # Successfull authentication
 if [ $RETURN_CODE -eq $RET_SUCC ]; then
   printf "access-accept; %0.2f sec " $T
-  printf "|rtt=%0.0fus;;;0;%d accept=1;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
+  printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
   if [ $VERBOSE -gt 0 ]; then
 	  cat $OUT
   fi
@@ -358,7 +358,7 @@ fi
 # string "CTRL-EVENT-EAP-FAILURE EAP authentication failed"
 if [ $RETURN_CODE -eq $RET_EAP_FAILED ]; then
   printf "access-reject; %0.2f sec " $T
-  printf "|rtt=%0.0fus;;;0;%d accept=0.5;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
+  printf "|rtt=%0.0fms;;;0;%d accept=0.5;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
   if [ $VERBOSE -gt 0 ]; then
 	  cat $OUT
   fi
@@ -371,7 +371,7 @@ fi
 # timeout string "EAPOL test timed out"
 if [ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]; then
   printf "timeout; %0.0f sec " $T
-  printf "|rtt=%0.0fus;;;0;%d accept=0;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
+  printf "|rtt=%0.0fms;;;0;%d accept=0;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
   if [ $VERBOSE -gt 0 ]; then
 	  cat $OUT
   fi
