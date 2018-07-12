@@ -304,7 +304,7 @@ garbage() {
 	fi
 }
 
-trap "garbage ; exit 2" INT
+trap "garbage ; exit 2" INT TERM
 
 BEGIN=`date +%s`
 
