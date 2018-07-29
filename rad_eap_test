@@ -206,7 +206,8 @@ if [ -z $PHASE2 ]; then
 fi
 
 if [ -n "$OPERATOR_NAME" ] ; then
-	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N126:s:$OPERATOR_NAME"
+        # prefix the Operator_Name with NamespaceID value "1" (REALM) as per RFC5580
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N126:s:1$OPERATOR_NAME"
 fi
 
 if [ -n "$NAS_IP_ADDRESS" ] ; then
