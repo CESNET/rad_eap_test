@@ -384,7 +384,7 @@ if [ $RETURN_CODE -eq $RET_SUCC ]; then
     fi
 
     printf "\n"
-    printf "RADIUS server $ADRESS certificate information:\n"
+    printf "RADIUS server certificate information:\n"
     printf "%s\n" "$(echo "$cert_info" | grep 'Issuer: ' | sed 's/^[[:space:]]*//g')"
     printf "%s\n" "$(echo "$cert_info" | grep 'Subject: ' | sed 's/^[[:space:]]*//g')"
     printf "%s\n" "$(echo "$cert_info" | grep -A 2 'Validity' | sed 's/^[[:space:]]*//g')"
