@@ -332,6 +332,65 @@ garbage() {
 
 trap "garbage ; exit 2" INT TERM
 
+
+# ===========================================================================================
+# check that cert is end server cert - not root or intermediate cert
+# params:
+# 1) cert to check (as text)
+# ===========================================================================================
+check_cert()
+{
+  # we're only looking for cert that does not contain 'CA:TRUE' flag
+  res=$(echo "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
+
+  if [ -z "$res" ]
+  then
+    return 0        # the cert is for end server
+  else
+    return 1        # intermediate or root
+  fi
+}
+# ===========================================================================================
+# get RADIUS server certificate info
+# params:
+# 1) path to the cert
+# ===========================================================================================
+get_cert_info()
+{
+  in=false
+
+  # read cert file line by line
+  while read line
+  do
+    if [ "$in" = "true" ]
+    then
+      tmp="$tmp\n$line"
+    fi
+
+    if [ "$line" = "-----BEGIN CERTIFICATE-----" ]
+    then
+      in=true
+      tmp="$line"
+    fi
+
+    if [ "$line" = "-----END CERTIFICATE-----" ]
+    then
+      in=false
+      check_cert "$tmp"
+
+      if [ $? -eq 0 ]   # correct cert
+      then
+        cert_info=$(echo "$tmp" | openssl x509 -text -noout)
+        break
+      fi
+    fi
+
+  done < "$1"
+
+  #cert_info=$(awk '/-----BEGIN CERTIFICATE-----/{ flag = 1; print $0; next } /^$/ { flag = 0 ; exit 0} flag' "$1" | openssl x509 -text -noout)
+}
+
+
 BEGIN=`date +%s.%N`
 
 #echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR"
@@ -378,9 +437,9 @@ if [ $RETURN_CODE -eq $RET_SUCC ]; then
 
   if [ -n "$GET_CERT" ]; then
     if [ -n "$WRITE_CERT" ]; then
-      cert_info=$(awk '/-----BEGIN CERTIFICATE-----/{ flag = 1; print $0; next } /^$/ { flag = 0 ; exit 0} flag' $WRITE_CERT | openssl x509 -text -noout)
+      get_cert_info $WRITE_CERT
     else
-      cert_info=$(awk '/-----BEGIN CERTIFICATE-----/{ flag = 1; print $0; next } /^$/ { flag = 0 ; exit 0} flag' ${MYTMPDIR}/RADIUS_cert.pem | openssl x509 -text -noout)
+      get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
     fi
 
     printf "\n"
