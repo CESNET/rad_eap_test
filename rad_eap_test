@@ -387,7 +387,6 @@ get_cert_info()
 
   done < "$1"
 
-  #cert_info=$(awk '/-----BEGIN CERTIFICATE-----/{ flag = 1; print $0; next } /^$/ { flag = 0 ; exit 0} flag' "$1" | openssl x509 -text -noout)
 }
 
 
