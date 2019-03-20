@@ -387,6 +387,12 @@ get_cert_info()
 
   done < "$1"
 
+  # no cert seemed correct as end server cert
+  # take the last one processed
+  if [ -z "$cert_info" ]
+  then
+    cert_info=$(echo "$tmp" | openssl x509 -text -noout)
+  fi
 }
 
 
