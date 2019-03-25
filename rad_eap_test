@@ -382,7 +382,7 @@ get_cert_info()
 
       if [ $? -eq 0 ]   # correct cert
       then
-        cert_info=$(echo "$tmp" | openssl x509 -text -noout)
+        cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
         break
       fi
     fi
@@ -393,7 +393,7 @@ get_cert_info()
   # take the last one processed
   if [ -z "$cert_info" ]
   then
-    cert_info=$(echo "$tmp" | openssl x509 -text -noout)
+    cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
   fi
 }
 
