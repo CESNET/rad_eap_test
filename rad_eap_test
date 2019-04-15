@@ -236,7 +236,8 @@ if [ -n "$FRAGMENT" ] ; then
 fi
 
 if [ -n "$CALLED_STATION_ID" ] ; then
-	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N30:s:$MAC:$SSID"
+	DASHEDMAC=`echo $MAC | sed 's/:/-/g' | tr a-z A-Z`
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N30:s:$DASHEDMAC:$SSID"
 fi
 
 # address may be address or ip address
