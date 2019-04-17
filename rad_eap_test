@@ -51,7 +51,7 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
     fi
 fi
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CfhbB:D -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:D -- "$@"`
 
 myhelp() {
   echo "# wrapper script around eapol_test from wpa_supplicant project 
@@ -84,6 +84,7 @@ Parameters :
 -O <domain.edu.cctld> - Operator-Name value in domain name format
 -I <ip address> - explicitly specify NAS-IP-Address
 -C - request Chargeable-User-Identity
+-T - send Called-Station-Id in MAC:SSID format
 -f - send big access-request to cause fragmentation
 -b - print details about certificate of RADIUS server
 -B <file> - save certificate of RADIUS server to specified file
@@ -128,6 +129,7 @@ while true ; do
     -O) OPERATOR_NAME=$2; shift 2;;
     -I) NAS_IP_ADDRESS=$2; shift 2;;
     -C) REQUEST_CUI="YES"; shift ;;
+    -T) CALLED_STATION_ID="YES"; shift ;;
     -f) FRAGMENT="YES"; shift ;;
     -b) GET_CERT="YES"; shift ;;
     -B) WRITE_CERT=$2; shift 2;;
@@ -231,6 +233,11 @@ if [ -n "$FRAGMENT" ] ; then
     for i in `seq 1 6` ; do
 	    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N26:x:0000625A0BF961616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161"
     done
+fi
+
+if [ -n "$CALLED_STATION_ID" ] ; then
+	DASHEDMAC=`echo $MAC | sed 's/:/-/g' | tr a-z A-Z`
+	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N30:s:$DASHEDMAC:$SSID"
 fi
 
 # address may be address or ip address
