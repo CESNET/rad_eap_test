@@ -51,7 +51,7 @@ if [ ! -x "$EAPOL_PROG" ]; then # exact path?
   fi
 fi
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:D -- "$@"`
+TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB: -- "$@"`
 
 myhelp() {
   echo "# wrapper script around eapol_test from wpa_supplicant project
@@ -88,7 +88,6 @@ Parameters :
 -f - send big access-request to cause fragmentation
 -b - print details about certificate of RADIUS server
 -B <file> - save certificate of RADIUS server to specified file
--D - do not cleanup temporary files
 -h - show this message
 " >&2;
   exit 1;
@@ -133,7 +132,6 @@ while true ; do
     -f) FRAGMENT="YES"; shift ;;
     -b) GET_CERT="YES"; shift ;;
     -B) WRITE_CERT=$2; shift 2;;
-    -D) CLEANUP=0; shift;;
     -h) myhelp; shift ;;
     --) break ;;
     *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
