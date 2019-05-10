@@ -198,7 +198,7 @@ if [ -z $METHOD ]; then
   exit 3;
 fi
 
-if [ -z $CA_CRT ]; then
+if [ ! -z $CA_CRT ]; then
   if [ ! -f $CA_CRT ]; then
     echo "Certificate authority file doesn't exist. (option -a)";
     exit 3;
