@@ -130,7 +130,7 @@ function authenticate()
   run_eapol_test
 
   # determine the RETURN_CODE based on specific constants used in eapol_test output
-  if [[ "$OUT" =~ ^SUCCESS$  || "$OUT" =~ $succ ]]
+  if [[ "$OUT" =~ $succ1 || "$OUT" =~ $succ2 ]]
   then
     RETURN_CODE=$RET_SUCC               # success
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
