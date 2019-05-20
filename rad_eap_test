@@ -179,7 +179,7 @@ function print_cert()
 function check_cert()
 {
   # we're only looking for cert that does not contain 'CA:TRUE' flag
-  res=$(echo "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
+  res=$(echo -e "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
 
   if [[ -z "$res" ]]
   then
@@ -218,7 +218,7 @@ function get_cert_info()
 
       if [[ $? -eq 0 ]]   # correct cert
       then
-        cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
+        cert_info=$(echo -e "$tmp" | openssl x509 -nameopt utf8 -text -noout)
         break
       fi
     fi
@@ -229,7 +229,7 @@ function get_cert_info()
   # take the last one processed
   if [[ -z "$cert_info" ]]
   then
-    cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
+    cert_info=$(echo -e "$tmp" | openssl x509 -nameopt utf8 -text -noout)
   fi
 }
 
