@@ -480,7 +480,7 @@ function check_settings()
 
   # address may be DNS name or an IPv4 address
   # TODO - IPv6 support?
-  IP=$(echo "$ADDRESS" | grep -P "^(\d\.){3}\d$")
+  IP=$(echo "$ADDRESS" | grep -P '^(\d{1,3}\.){3}\d{1,3}$')
 
   if [[ -z "$IP" ]]
   then
