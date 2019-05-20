@@ -484,7 +484,7 @@ function check_settings()
 
   if [[ -z "$IP" ]]
   then
-    IP=$(dig +short -x "$ADDRESS")
+    IP=$(dig +short "$ADDRESS")
   fi
 
   # Sanity check: did we get an IP address?
