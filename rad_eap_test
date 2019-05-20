@@ -284,9 +284,9 @@ function generate_config()
   echo "}" >> $CONF
 }
 # ===========================================================================================
-# print help for the program
+# print usage for the program
 # ===========================================================================================
-function help()
+function usage()
 {
   echo "# this program is a wrapper for eapol_test from wpa_supplicant project
 # this script generates configuration for eapol_test and runs it
@@ -522,52 +522,45 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  # TODO - rewrite
-
-
-  TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n: -- "$@"`
-
-  eval set -- "$TEMP"
-
-  while true
+  while getopts ":H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:g" opt
   do
-    case "$1" in
-      -H) ADDRESS=$2; shift 2 ;;
-      -P) PORT=$2; shift 2 ;;
-      -S) SECRET=$2; shift 2 ;;
-      -u) USERNAME=$2; shift 2 ;;
-      -p) PASSWORD=$2; shift 2 ;;
-      -t) TIMEOUT=$2; shift 2 ;;
-      -m) METHOD=$2; shift 2 ;;
-      -v) VERBOSE=1;  shift ;;
-      -c) VERBOSE=2;  shift ;;
-      -s) SSID=$2; shift 2 ;;
-      -e) EAP=$2; shift 2;;
-      -M) MAC=$2; shift 2;;
-      -i) CONN_INFO=$2; shift 2;;
-      -d) STATUS_DIR="$2"; shift 2;;      # TODO - k cemu je tohle dobre?
-      -k) USER_KEY=$2; shift 2;;
-      -j) USER_CRT=$2; shift 2;;
-      -a) CA_CRT=$2; shift 2;;
-      -A) ANONYM_ID=$2; shift 2;;
-      -l) KEY_PASS=$2; shift 2;;
-      -2) PHASE2=$2; shift 2;;
-      -N) CLEANUP=0; shift ;;
-      -x) SUBJ_MATCH=$2; shift 2;;
-      -O) OPERATOR_NAME=$2; shift 2;;
-      -I) NAS_IP_ADDRESS=$2; shift 2;;
-      -C) REQUEST_CUI="YES"; shift ;;
-      -T) CALLED_STATION_ID="YES"; shift ;;
-      -f) FRAGMENT="YES"; shift ;;
-      -b) GET_CERT="YES"; shift ;;
-      -B) WRITE_CERT=$2; shift 2;;
-      -n) TMPDIR=$2; shift 2;;
-      -g) VERBOSE=3; shift ;;       # TODO - test
-      -h) myhelp; shift ;;
-      --) break ;;
-      *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
+    case "$opt" in
+      H) ADDRESS=$OPTARG;;
+      P) PORT=$OPTARG;;
+      S) SECRET=$OPTARG;;
+      u) USERNAME=$OPTARG;;
+      p) PASSWORD=$OPTARG;;
+      t) TIMEOUT=$OPTARG;;
+      m) METHOD=$OPTARG;;
+      v) VERBOSE=1;;
+      c) VERBOSE=2;;
+      s) SSID=$OPTARG;;
+      e) EAP=$OPTARG;;
+      M) MAC=$OPTARG;;
+      i) CONN_INFO=$OPTARG;;
+      d) STATUS_DIR="$OPTARG";;       # TODO - k cemu je tohle dobre?
+      k) USER_KEY=$OPTARG;;
+      j) USER_CRT=$OPTARG;;
+      a) CA_CRT=$OPTARG;;
+      A) ANONYM_ID=$OPTARG;;
+      l) KEY_PASS=$OPTARG;;
+      2) PHASE2=$OPTARG;;
+      N) CLEANUP=0;;
+      x) SUBJ_MATCH=$OPTARG;;
+      O) OPERATOR_NAME=$OPTARG;;
+      I) NAS_IP_ADDRESS=$OPTARG;;
+      C) REQUEST_CUI="YES";;
+      T) CALLED_STATION_ID="YES";;
+      f) FRAGMENT="YES";;
+      b) GET_CERT="YES";;
+      B) WRITE_CERT=$OPTARG;;
+      n) TMPDIR=$OPTARG;;
+      g) VERBOSE=3;;         # TODO - test
+      h) usage;;
+      \?) usage;;
     esac
   done
+  shift $((OPTIND-1))
 }
 # ===========================================================================================
 # set the default configuration
@@ -625,3 +618,4 @@ trap "cleanup ; exit 2" INT TERM
 # ===========================================================================================
 # run the main function
 main "$@"
+# ===========================================================================================
