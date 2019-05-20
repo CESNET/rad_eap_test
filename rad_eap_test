@@ -102,24 +102,32 @@ function process_auth_result()
   exit 4
 }
 # ===========================================================================================
-# run eapol_test and try to authenticate using the specified configuration
+# run eapol_test
 # ===========================================================================================
-function authenticate()
+function run_eapol_test()
 {
-  # constants which define return codes based on eapol_test output
-  local eap_fail1="^CTRL-EVENT-EAP-FAILURE EAP authentication failed$"
-  local eap_fail2="^EAP: Received EAP-Failure$"
-  local timeout="^EAPOL test timed out$"
-  local succ="^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$"
-  local reject="Access-Reject"
-
   BEGIN=$(date +%s.%N)      # start the "timer"
 
   # try to authenticate
   OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" $EXTRA_EAPOL_ARGS "$STATUS_DIR" 2>&1)      # save output as a variable
 
   END=$(date +%s.%N)        # end the "timer"
+}
+# ===========================================================================================
+# run eapol_test and try to authenticate using the specified configuration
+# ===========================================================================================
+function authenticate()
+{
+  # constants which define return codes based on eapol_test output
+  # '$' character defines end of line in bash expressions - the next line follows it immediately
+  local eap_fail1=$'CTRL-EVENT-EAP-FAILURE EAP authentication failed'
+  local eap_fail2=$'EAP: Received EAP-Failure'
+  local timeout=$'EAPOL test timed out'
+  local succ1=$'SUCCESS'
+  local succ2=$'CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
+  local reject='Access-Reject'
 
+  run_eapol_test
 
   # determine the RETURN_CODE based on specific constants used in eapol_test output
   if [[ "$OUT" =~ ^SUCCESS$  || "$OUT" =~ $succ ]]
