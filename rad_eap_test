@@ -87,19 +87,19 @@ function process_auth_result()
   if [[ $RETURN_CODE -eq $RET_EAP_FAILED ]]
   then
     print_out
-    exit 1
+    exit 2
   fi
 
   # timeout
   if [[ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]]
   then
     print_out       # TODO - does verbose make sense here?
-    exit 2
+    exit 3
   fi
 
   # other case is probably error
-  echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE;
-  exit 3;
+  echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
+  exit 4
 }
 # ===========================================================================================
 # run eapol_test and try to authenticate using the specified configuration
