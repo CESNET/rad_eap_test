@@ -116,7 +116,7 @@ function authenticate()
   BEGIN=$(date +%s.%N)      # start the "timer"
 
   # try to authenticate
-  OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" "$EXTRA_EAPOL_ARGS" -d "$STATUS_DIR" 2>&1)      # save output as a variable
+  OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" $EXTRA_EAPOL_ARGS "$STATUS_DIR" 2>&1)      # save output as a variable
 
   END=$(date +%s.%N)        # end the "timer"
 
