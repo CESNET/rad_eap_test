@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# ===========================================================================================
 # rad_eapol_test nagios compatible wraper around eapol_test
 # Copyright (c) 2005-2016 CESNET, z.s.p.o.
 # Authors: Pavel Poláček <pavel.polacek@ujep.cz>
@@ -13,102 +14,126 @@
 #
 # See README and COPYING for more details.
 # ===========================================================================================
-# run eapol_test and try to authenticate using the specified configuration
+
+
+
 # ===========================================================================================
-function authenticate()
+# add verbose info based on user set level
+# ===========================================================================================
+verbose()
 {
-  BEGIN=`date +%s.%N`
+  # further processing based on VERBOSE level
+  case "$VERBOSE" in
+    0) ;;       # nothing to do here, just an empty branch
 
-  #echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR"
+    # print the last packet decoded
+    1) ;;
+      echo "$OUT" | sed -n '/(Access-Accept)/,$p'        # print from Access-Accept to the end
 
-  # try authenticate
-  if [ $VERBOSE -eq 0 ]; then
-    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR | awk '/^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
-  else
-    if [ $VERBOSE -eq 1 ]; then
-      $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';}  /Access-Reject/ {exit '$RET_EAP_FAILED';} '  > $OUT2
-    else
-      $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /polish/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';}  /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
-    fi
+    # print all the packets decoded
+    2)
+      echo "$OUT" | awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print}'
+      ;;
+
+    # print the raw output of eapol_test
+    3)
+      echo "$OUT"
+      ;;
+  esac
+
+  process_cert      # also process certificates if wanted
+}
+# ===========================================================================================
+# process RADIUS certificate
+# ===========================================================================================
+function process_cert()
+{
+  if [[ -n "$GET_CERT" ]]
+   then
+    get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
+    print_cert
+  elif [[ -n "$WRITE_CERT" ]]
+  then
+    get_cert_info $WRITE_CERT
+    print_cert
+  fi
+}
+# ===========================================================================================
+# print final outpupt
+# ===========================================================================================
+function print_out()
+{
+  # print the output
+  printf "access-accept; %0.2f sec " $TIME_SEC
+  printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
+
+  verbose  # add extra verbose output if the user wants it, also process certs if wanted
+  cleanup  # cleanup temp files
+}
+# ===========================================================================================
+# process results of the authentication and present them to the user
+# ===========================================================================================
+function process_auth_result()
+{
+  # successfull authentication
+  if [[ $RETURN_CODE -eq $RET_SUCC ]]
+  then
+    print_out
+    exit 0
   fi
 
-
-
-  RETURN_CODE=$?
-
-  END=`date +%s.%N`
-  #T=$((END-BEGIN))
-  T=$(echo "$END-$BEGIN" | bc)
-  TU=$(echo "$T * 1000" | bc)
-
-  #echo $RETURN_CODE
-
-  # remove configuration file
-  #rm $CONF
-  #cp $CONF test.conf
-
-  if [ $VERBOSE -eq 1 ]; then
-    grep -A 100 "(Access-Accept)" $OUT2 > $OUT
-    rm $OUT2
+  # wrong username or password
+  if [[ $RETURN_CODE -eq $RET_EAP_FAILED ]]
+  then
+    print_out
+    exit 1
   fi
 
-  # processing of return code
-  # Successfull authentication
-  if [ $RETURN_CODE -eq $RET_SUCC ]; then
-    printf "access-accept; %0.2f sec " $T
-    printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-    if [ $VERBOSE -gt 0 ]; then
-      cat $OUT
-    fi
-
-    if [ -n "$GET_CERT" ]; then
-      if [ -n "$WRITE_CERT" ]; then
-        get_cert_info $WRITE_CERT
-      else
-        get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-      fi
-
-      printf "\n"
-      printf "RADIUS server certificate information:\n"
-      printf "%s\n" "$(echo "$cert_info" | grep 'Issuer: ' | sed 's/^[[:space:]]*//g')"
-      printf "%s\n" "$(echo "$cert_info" | grep 'Subject: ' | sed 's/^[[:space:]]*//g')"
-      printf "%s\n" "$(echo "$cert_info" | grep -A 2 'Validity' | sed 's/^[[:space:]]*//g')"
-      printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"
-    fi
-
-    cleanup
-    exit 0;
-  fi
-
-  # Bad name or password
-  # string "CTRL-EVENT-EAP-FAILURE EAP authentication failed"
-  if [ $RETURN_CODE -eq $RET_EAP_FAILED ]; then
-    printf "access-reject; %0.2f sec " $T
-    printf "|rtt=%0.0fms;;;0;%d accept=0.5;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-    if [ $VERBOSE -gt 0 ]; then
-      cat $OUT
-    fi
-
-    cleanup
-    exit 1;
-  fi
-
-  # timeout return same error as above
-  # timeout string "EAPOL test timed out"
-  if [ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]; then
-    printf "timeout; %0.0f sec " $T
-    printf "|rtt=%0.0fms;;;0;%d accept=0;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-    if [ $VERBOSE -gt 0 ]; then
-      cat $OUT
-    fi
-
-    cleanup
-    exit 2;
+  # timeout
+  if [[ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]]
+  then
+    print_out       # TODO - does verbose make sense here?
+    exit 2
   fi
 
   # other case is probably error
   echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE;
   exit 3;
+}
+# ===========================================================================================
+# run eapol_test and try to authenticate using the specified configuration
+# ===========================================================================================
+function authenticate()
+{
+  # constants which define return codes based on eapol_test output
+  local eap_fail1="^CTRL-EVENT-EAP-FAILURE EAP authentication failed$"
+  local eap_fail2="^EAP: Received EAP-Failure$"
+  local timeout="^EAPOL test timed out$"
+  local succ="^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$"
+  local reject="Access-Reject"
+
+  BEGIN=$(date +%s.%N)      # start the "timer"
+
+  # try to authenticate
+  OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" "$EXTRA_EAPOL_ARGS" -d "$STATUS_DIR" 2>&1)      # save output as a variable
+
+  END=$(date +%s.%N)        # end the "timer"
+
+
+  # determine the RETURN_CODE based on specific constants used in eapol_test output
+  if [[ "$OUT" =~ ^SUCCESS$  || "$OUT" =~ $succ ]]
+  then
+    RETURN_CODE=$RET_SUCC               # success
+  elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
+  then
+    RETURN_CODE=$RET_EAP_FAILED         # auth failed
+  elif [[ "$OUT" =~ $timeout ]]
+  then
+    RETURN_CODE=$RET_RADIUS_NOT_AVAIL   # timeout ?
+  fi
+
+  TIME_SEC=$(echo "$END - $BEGIN" | bc)        # how long the authentication took in seconds
+  TIME_MSEC=$(echo "$TIME_SEC * 1000" | bc)           # how long the authentication took in milliseconds
 }
 # ===========================================================================================
 # cleanup temporary files
@@ -119,9 +144,11 @@ function cleanup()
   then
     rm -r $MYTMPDIR         # delete all temp files
   else
+    echo "$OUT" > $OUTFILE  # write raw eapol_test output to temp file
+
     echo "Leaving temporary files in $MYTMPDIR"
     echo -e "\tConfiguration: $CONF"
-    echo -e "\tOutput: $OUT"
+    echo -e "\tOutput: $OUTFILE"
 
     if [[ -z "$WRITE_CERT" ]]
     then
@@ -132,11 +159,23 @@ function cleanup()
   fi
 }
 # ===========================================================================================
+# print certificate information
+# ===========================================================================================
+function print_cert()
+{
+  printf "\n"
+  printf "RADIUS server certificate information:\n"
+  printf "%s\n" "$(echo "$cert_info" | grep 'Issuer: ' | sed 's/^[[:space:]]*//g')"
+  printf "%s\n" "$(echo "$cert_info" | grep 'Subject: ' | sed 's/^[[:space:]]*//g')"
+  printf "%s\n" "$(echo "$cert_info" | grep -A 2 'Validity' | sed 's/^[[:space:]]*//g')"
+  printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"
+}
+# ===========================================================================================
 # check that cert is end server cert - not root or intermediate cert
 # params:
 # 1) cert to check (as text)
 # ===========================================================================================
-check_cert()
+function check_cert()
 {
   # we're only looking for cert that does not contain 'CA:TRUE' flag
   res=$(echo "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
@@ -153,7 +192,7 @@ check_cert()
 # params:
 # 1) path to the cert
 # ===========================================================================================
-get_cert_info()
+function get_cert_info()
 {
   in=false
 
@@ -464,7 +503,7 @@ function check_settings()
 
   # configuration files
   CONF=$MYTMPDIR/tmp-$$.conf
-  OUT=$MYTMPDIR/tmp-$$.out
+  OUTFILE=$MYTMPDIR/tmp-$$.out
 
   # RADIUS server cert
   if [[ -n "$GET_CERT" ]]
@@ -503,10 +542,9 @@ function process_options()
       -c) VERBOSE=2;  shift ;;
       -s) SSID=$2; shift 2 ;;
       -e) EAP=$2; shift 2;;
-      -t) TIMEOUT=$2; shift 2;;
       -M) MAC=$2; shift 2;;
       -i) CONN_INFO=$2; shift 2;;
-      -d) STATUS_DIR="-d$2"; shift 2;;      # TODO - k cemu je tohle dobre?
+      -d) STATUS_DIR="$2"; shift 2;;      # TODO - k cemu je tohle dobre?
       -k) USER_KEY=$2; shift 2;;
       -j) USER_CRT=$2; shift 2;;
       -a) CA_CRT=$2; shift 2;;
@@ -577,6 +615,8 @@ function main()
   process_options "$@"
   check_settings
   generate_config
+  authenticate
+  process_auth_result
 }
 # ===========================================================================================
 # set the handler for INT and TERM first
