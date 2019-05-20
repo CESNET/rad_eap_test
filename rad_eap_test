@@ -120,7 +120,7 @@ while true ; do
     -k) USER_KEY=$2; shift 2;;
     -j) USER_CRT=$2; shift 2;;
     -a) CA_CRT=$2; shift 2;;
-    -A) ANOMYM_ID=$2; shift 2;;
+    -A) ANONYM_ID=$2; shift 2;;
     -l) KEY_PASS=$2; shift 2;;
     -2) PHASE2=$2; shift 2;;
     -N) CLEANUP=0; shift ;;
@@ -293,8 +293,8 @@ fi
 
 echo "  identity=\"$USERNAME\"" >> $CONF
 
-if [ ! -z $ANOMYM_ID ]; then
-  echo "  anonymous_identity=\"$ANOMYM_ID\"" >> $CONF
+if [ ! -z $ANONYM_ID ]; then
+  echo "  anonymous_identity=\"$ANONYM_ID\"" >> $CONF
 fi
 
 if [ "$EAP" = "TLS" ]; then
