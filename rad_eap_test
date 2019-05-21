@@ -189,10 +189,10 @@ function print_cert()
 {
   printf "\n"
   printf "RADIUS server certificate information:\n"
-  printf "%s\n" "$(echo "$cert_info" | grep 'Issuer: ' | sed 's/^[[:space:]]*//g')"
-  printf "%s\n" "$(echo "$cert_info" | grep 'Subject: ' | sed 's/^[[:space:]]*//g')"
-  printf "%s\n" "$(echo "$cert_info" | grep -A 2 'Validity' | sed 's/^[[:space:]]*//g')"
-  printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"
+  printf "%s\n" "$(echo -e "$CERT" | openssl x509 -noout -issuer -subject -dates |   # extract issuer, subject, dates
+                 sed 's/issuer=/Issuer: /; s/subject=/Subject: /; s/notBefore=/Validity\nNot Before: /; s/notAfter=/Not After: /')" # more readable output
+
+  printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"     # DNS names cannot be extracted directly by openssl
 }
 # ===========================================================================================
 # check that cert is end server cert - not root or intermediate cert
@@ -225,34 +225,33 @@ function get_cert_info()
   do
     if [[ "$in" = "true" ]]
     then
-      tmp="$tmp\n$line"
+      CERT="$CERT\n$line"
     fi
 
     if [[ "$line" = "-----BEGIN CERTIFICATE-----" ]]
     then
       in=true
-      tmp="$line"
+      CERT="$line"
     fi
 
     if [[ "$line" = "-----END CERTIFICATE-----" ]]
     then
       in=false
-      check_cert "$tmp"
+      check_cert "$CERT"
 
       if [[ $? -eq 0 ]]   # correct cert
       then
-        cert_info=$(echo -e "$tmp" | openssl x509 -nameopt utf8 -text -noout)
+        cert_info=$(echo -e "$CERT" | openssl x509 -nameopt utf8 -text -noout)
         break
       fi
     fi
-
   done < "$1"
 
   # no cert seemed correct as end server cert
   # take the last one processed
   if [[ -z "$cert_info" ]]
   then
-    cert_info=$(echo -e "$tmp" | openssl x509 -nameopt utf8 -text -noout)
+    cert_info=$(echo -e "$CERT" | openssl x509 -nameopt utf8 -text -noout)
   fi
 }
 
