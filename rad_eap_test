@@ -17,6 +17,40 @@
 
 
 
+
+# ===========================================================================================
+# test certificate expiry based on user set number of days
+# ===========================================================================================
+function test_cert_expiry()
+{
+  local not_after
+  local expiry_now
+  local expiry_warn
+  local expiry_date
+
+  # certicite expiry was set
+  if [[ -n "$CERTIFICATE_EXPIRY" ]]
+  then
+    process_cert    # get the cert info needed
+
+    expiry_now=$(date +%s)                                                                  # current date in seconds
+    expiry_warn=$(($NOW + ($CERTIFICATE_EXPIRY * 86400)))                                   # when to warn before expiry in seconds
+    not_after=$(echo -e "$CERT" | openssl x509 -noout -dates | tail -1 | cut -d "=" -f 2)   # get the "not after" date from cert
+    expiry_date=$(date -d "$not_after" "+%s")                                               # get the expiry date in seconds
+
+
+    # do the actual expiry testing
+    if [[ $expiry_date -lt $expiry_now ]]
+    then
+      printf "CRITICAL: certificate EXPIRED %s\n" $(date -d "@$expiry_date" -Idate)
+      exit 2
+    elif [[ $expiry_date -lt $expiry_warn ]]
+    then
+      printf "WARNING: cerificate expires soon (%s)\n" $(date -d "@$expiry_date" -Idate)
+      exit 1
+    fi
+  fi
+}
 # ===========================================================================================
 # add verbose info based on user set level
 # ===========================================================================================
@@ -51,10 +85,12 @@ verbose()
       ;;
   esac
 
-  process_cert      # also process certificates if wanted
+  process_cert true      # also process certificates if wanted
 }
 # ===========================================================================================
 # process RADIUS certificate
+# params:
+# 1) flag - print cert if set
 # ===========================================================================================
 function process_cert()
 {
@@ -67,7 +103,10 @@ function process_cert()
       echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-      print_cert
+      if [[ -n "$1" && -z "$CERTIFICATE_EXPIRY" ]]      # only print cert if cert expiry was not set
+      then
+        print_cert
+      fi
     fi
 
   elif [[ -n "$WRITE_CERT" ]]
@@ -79,7 +118,10 @@ function process_cert()
       echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info $WRITE_CERT
-      print_cert
+      if [[ "$1" ]]
+      then
+        print_cert
+      fi
     fi
   fi
 }
@@ -100,6 +142,8 @@ function print_out()
 # ===========================================================================================
 function process_auth_result()
 {
+  test_cert_expiry      # test cert expiry dates if requsted, may cause early exit
+
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
     $RET_SUCC)                              # successfull authentication
@@ -375,6 +419,7 @@ Parameters :
 -n <directory> - store temporary files in specified directory
 -g - print the entire unmodified output of eapol_test
 -V - Show received Chargeable-User-Identity and/or Operator-Name
+-X <warn_days> - check certificate expiry
 -h - show this message
 " >&2
   exit 1
@@ -575,7 +620,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts ":H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gV" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -610,6 +655,7 @@ function process_options()
       n) TMPDIR=$OPTARG;;
       g) VERBOSE=4;;
       V) VERBOSE=1;;
+      X) GET_CERT="YES"; CERTIFICATE_EXPIRY=$OPTARG;;
       h) usage;;
       \?) usage;;
     esac
