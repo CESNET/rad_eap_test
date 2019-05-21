@@ -26,20 +26,26 @@ verbose()
   case "$VERBOSE" in
     0) ;;       # nothing to do here, just an empty branch
 
-    # print the last packet decoded
+    # Show received Chargeable-User-Identity and/or Operator-Name
     1)
+      echo ""
+      echo "$OUT" | sed -n '/(Access-Accept)/,$p' | awk '/Attribute (89|126) / { a=$3 } /Value: / && a { print a " " $2; a="" }'        # get Attribute 89 or 126 and print the value
+      ;;
+
+    # print the last packet decoded
+    2)
       echo ""
       echo "$OUT" | sed -n '/(Access-Accept)/,$p'        # print from Access-Accept to the end
       ;;
 
     # print all the packets decoded
-    2)
+    3)
       echo ""
       echo "$OUT" | awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print}'
       ;;
 
     # print the raw output of eapol_test
-    3)
+    4)
       echo ""
       echo "$OUT"
       ;;
@@ -368,6 +374,7 @@ Parameters :
 -B <file> - save certificate of RADIUS server to specified file
 -n <directory> - store temporary files in specified directory
 -g - print the entire unmodified output of eapol_test
+-V - Show received Chargeable-User-Identity and/or Operator-Name
 -h - show this message
 " >&2
   exit 1
@@ -568,7 +575,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts ":H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:g" opt
+  while getopts ":H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gV" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -578,8 +585,8 @@ function process_options()
       p) PASSWORD=$OPTARG;;
       t) TIMEOUT=$OPTARG;;
       m) METHOD=$OPTARG;;
-      v) VERBOSE=1;;
-      c) VERBOSE=2;;
+      v) VERBOSE=2;;
+      c) VERBOSE=3;;
       s) SSID=$OPTARG;;
       e) EAP=$OPTARG;;
       M) MAC=$OPTARG;;
@@ -601,7 +608,8 @@ function process_options()
       b) GET_CERT="YES";;
       B) WRITE_CERT=$OPTARG;;
       n) TMPDIR=$OPTARG;;
-      g) VERBOSE=3;;
+      g) VERBOSE=4;;
+      V) VERBOSE=1;;
       h) usage;;
       \?) usage;;
     esac
