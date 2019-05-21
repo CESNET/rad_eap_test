@@ -151,14 +151,17 @@ function authenticate()
   then
     RETURN_CODE=$RET_SUCC               # success
     STATUS_CODE="access-accept"
+
   elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_err ]]        # certifitace subject was speficied
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
     STATUS_CODE="access-reject"
+
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
   then
     RETURN_CODE=$RET_EAP_FAILED         # auth failed
     STATUS_CODE="access-reject"
+
   elif [[ "$OUT" =~ $timeout ]]
   then
     RETURN_CODE=$RET_RADIUS_NOT_AVAIL   # timeout ?
