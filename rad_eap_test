@@ -112,6 +112,10 @@ function process_auth_result()
       print_out
       exit 4;;
 
+    $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
+      print_out
+      exit 5;;
+
     *)                                      # other case is probably error
       echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
       exit 5;;
@@ -142,7 +146,8 @@ function authenticate()
   local succ1=$'SUCCESS'
   local succ2=$'CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
   local reject='Access-Reject'
-  local cert_err=$'CTRL-EVENT-EAP-TLS-CERT-ERROR'
+  local cert_subj_mismatch="err='Subject mismatch'"$
+  local cert_not_matching_ca="err='unable to get local issuer certificate'"$        # TODO - what about self-signed certs or so ?
 
   run_eapol_test
 
@@ -152,10 +157,15 @@ function authenticate()
     RETURN_CODE=$RET_SUCC               # success
     STATUS_CODE="access-accept"
 
-  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_err ]]        # certifitace subject was speficied
+  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was speficied
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
-    STATUS_CODE="access-reject"
+    STATUS_CODE="access-reject (certificate subject mismatch)"
+
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_not_matching_ca ]]        # CA was speficied
+  then
+    RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate not matching CA
+    STATUS_CODE="access-reject (certificate not matching specified CA)"
 
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
   then
@@ -633,6 +643,7 @@ function default_config()
   RET_EAP_FAILED=4
   RET_RADIUS_NOT_AVAIL=5
   RET_CERT_SUBJ_MISMATCH=6
+  RET_CERT_CA_MISMATCH=6
 
   # cleanup temporary files?
   CLEANUP=1
