@@ -106,19 +106,19 @@ function process_auth_result()
 
     $RET_RADIUS_NOT_AVAIL)                  # timeout
       print_out
-      exit 3;;
+      exit 2;;
 
     $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
       print_out
-      exit 4;;
+      exit 2;;
 
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
       print_out
-      exit 5;;
+      exit 2;;
 
     *)                                      # other case is probably error
       echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
-      exit 5;;
+      exit 3;;
   esac
 }
 # ===========================================================================================
