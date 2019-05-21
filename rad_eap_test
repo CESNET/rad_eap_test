@@ -94,30 +94,28 @@ function print_out()
 # ===========================================================================================
 function process_auth_result()
 {
-  # successfull authentication
-  if [[ $RETURN_CODE -eq $RET_SUCC ]]
-  then
-    print_out
-    exit 0
-  fi
+  # processing based on $RETURN_CODE
+  case "$RETURN_CODE" in
+    $RET_SUCC)                              # successfull authentication
+      print_out
+      exit 0;;
 
-  # wrong username or password
-  if [[ $RETURN_CODE -eq $RET_EAP_FAILED ]]
-  then
-    print_out
-    exit 2
-  fi
+    $RET_EAP_FAILED)                        # wrong username or password
+      print_out
+      exit 2;;
 
-  # timeout
-  if [[ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]]
-  then
-    print_out       # TODO - does verbose make sense here?
-    exit 3
-  fi
+    $RET_RADIUS_NOT_AVAIL)                  # timeout
+      print_out
+      exit 3;;
 
-  # other case is probably error
-  echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
-  exit 4
+    $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
+      print_out
+      exit 4;;
+
+    *)                                      # other case is probably error
+      echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
+      exit 5;;
+  esac
 }
 # ===========================================================================================
 # run eapol_test
