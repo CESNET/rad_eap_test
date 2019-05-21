@@ -585,7 +585,7 @@ function process_options()
       b) GET_CERT="YES";;
       B) WRITE_CERT=$OPTARG;;
       n) TMPDIR=$OPTARG;;
-      g) VERBOSE=3;;         # TODO - test
+      g) VERBOSE=3;;
       h) usage;;
       \?) usage;;
     esac
