@@ -31,7 +31,12 @@ function test_cert_expiry()
   # certicite expiry was set
   if [[ -n "$CERTIFICATE_EXPIRY" ]]
   then
-    process_cert    # get the cert info needed
+    process_cert_expiry    # get the cert info needed
+
+    if [[ $? -ne 0 ]]       # no cert available
+    then
+      return
+    fi
 
     expiry_now=$(date +%s)                                                                  # current date in seconds
     expiry_warn=$(($NOW + ($CERTIFICATE_EXPIRY * 86400)))                                   # when to warn before expiry in seconds
@@ -42,12 +47,13 @@ function test_cert_expiry()
     # do the actual expiry testing
     if [[ $expiry_date -lt $expiry_now ]]
     then
-      printf "CRITICAL: certificate EXPIRED %s\n" $(date -d "@$expiry_date" -Idate)
-      exit 2
+      PROG_OUT=$(printf "CRITICAL: certificate EXPIRED %s\n" $(date -d "@$expiry_date" -Idate))
+      EXIT_CODE=2
+
     elif [[ $expiry_date -lt $expiry_warn ]]
     then
-      printf "WARNING: cerificate expires soon (%s)\n" $(date -d "@$expiry_date" -Idate)
-      exit 1
+      PROG_OUT=$(printf "WARNING: cerificate expires soon (%s)\n" $(date -d "@$expiry_date" -Idate))
+      EXIT_CODE=1
     fi
   fi
 }
@@ -88,9 +94,39 @@ verbose()
   process_cert true      # also process certificates if wanted
 }
 # ===========================================================================================
+# process RADIUS certificate for expiry check
+# ===========================================================================================
+function process_cert_expiry()
+{
+  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+   then
+
+    if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
+    then
+      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      EXIT_CODE=2
+      return 1      # cert not retrieved
+    else
+      get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
+    fi
+
+  elif [[ -n "$WRITE_CERT" ]]
+  then
+    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
+    then
+      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      EXIT_CODE=2
+      return 1      # cert not retrieved
+    else
+      get_cert_info $WRITE_CERT
+    fi
+  fi
+
+  return 0      # no error
+}
+# ===========================================================================================
 # process RADIUS certificate
 # params:
-# 1) flag - print cert if set
 # ===========================================================================================
 function process_cert()
 {
@@ -103,10 +139,7 @@ function process_cert()
       echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-      if [[ -n "$1" && -z "$CERTIFICATE_EXPIRY" ]]      # only print cert if cert expiry was not set
-      then
-        print_cert
-      fi
+      print_cert
     fi
 
   elif [[ -n "$WRITE_CERT" ]]
@@ -118,10 +151,7 @@ function process_cert()
       echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info $WRITE_CERT
-      if [[ "$1" ]]
-      then
-        print_cert
-      fi
+      print_cert
     fi
   fi
 }
@@ -130,10 +160,7 @@ function process_cert()
 # ===========================================================================================
 function print_out()
 {
-  # print the output
-  printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
-  printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
-
+  echo "$PROG_OUT" # print the output
   verbose  # add extra verbose output if the user wants it, also process certs if wanted
   cleanup  # cleanup temp files
 }
@@ -144,35 +171,37 @@ function process_auth_result()
 {
   EXIT_CODE=0
 
-  test_cert_expiry      # test cert expiry dates if requsted, may cause early exit
+  # preset output needed for most situations
+  PROG_OUT=$(
+              printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
+              printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
+            )
 
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
     $RET_SUCC)                              # successfull authentication
-      print_out;;
+      ;;                                    # nothing to do here, EXIT_CODE is preset to 0
 
     $RET_EAP_FAILED)                        # wrong username or password
-      print_out
       EXIT_CODE=2;;
 
     $RET_RADIUS_NOT_AVAIL)                  # timeout
-      print_out
       EXIT_CODE=2;;
 
     $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
-      print_out
       EXIT_CODE=2;;
 
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
-      print_out
       EXIT_CODE=2;;
 
     *)                                      # other case is probably error
-      echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
+      PROG_OUT=$(echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE)
       EXIT_CODE=3;;
   esac
 
-  exit $EXIT_CODE
+  test_cert_expiry      # test cert expiry dates if requested, may override EXIT_CODE
+  print_out             # print output, add verbose output if requsted and cleanup
+  exit $EXIT_CODE       # exit with $EXIT_CODE
 }
 # ===========================================================================================
 # run eapol_test
@@ -294,6 +323,11 @@ function check_cert()
 function get_cert_info()
 {
   in=false
+
+  if [[ -n "$cert_info" && -n "$CERT" ]]        # both $CERT and $cert_info already set, no need to process certs again
+  then
+    return
+  fi
 
   # read cert file line by line
   while read line
@@ -606,7 +640,7 @@ function check_settings()
   OUTFILE=$MYTMPDIR/tmp-$$.out
 
   # RADIUS server cert
-  if [[ -n "$GET_CERT" ]]
+  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
   fi
@@ -658,7 +692,7 @@ function process_options()
       n) TMPDIR=$OPTARG;;
       g) VERBOSE=4;;
       V) VERBOSE=1;;
-      X) GET_CERT="YES"; CERTIFICATE_EXPIRY=$OPTARG;;
+      X) CERTIFICATE_EXPIRY=$OPTARG;;
       h) usage;;
       \?) usage;;
     esac
