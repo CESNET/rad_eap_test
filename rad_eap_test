@@ -91,7 +91,7 @@ verbose()
       ;;
   esac
 
-  process_cert true      # also process certificates if wanted
+  process_cert      # also process certificates if wanted
 }
 # ===========================================================================================
 # process RADIUS certificate for expiry check
@@ -126,7 +126,6 @@ function process_cert_expiry()
 }
 # ===========================================================================================
 # process RADIUS certificate
-# params:
 # ===========================================================================================
 function process_cert()
 {
