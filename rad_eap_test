@@ -142,34 +142,37 @@ function print_out()
 # ===========================================================================================
 function process_auth_result()
 {
+  EXIT_CODE=0
+
   test_cert_expiry      # test cert expiry dates if requsted, may cause early exit
 
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
     $RET_SUCC)                              # successfull authentication
-      print_out
-      exit 0;;
+      print_out;;
 
     $RET_EAP_FAILED)                        # wrong username or password
       print_out
-      exit 2;;
+      EXIT_CODE=2;;
 
     $RET_RADIUS_NOT_AVAIL)                  # timeout
       print_out
-      exit 2;;
+      EXIT_CODE=2;;
 
     $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
       print_out
-      exit 2;;
+      EXIT_CODE=2;;
 
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
       print_out
-      exit 2;;
+      EXIT_CODE=2;;
 
     *)                                      # other case is probably error
       echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE
-      exit 3;;
+      EXIT_CODE=3;;
   esac
+
+  exit $EXIT_CODE
 }
 # ===========================================================================================
 # run eapol_test
