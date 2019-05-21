@@ -39,7 +39,7 @@ function test_cert_expiry()
     fi
 
     expiry_now=$(date +%s)                                                                  # current date in seconds
-    expiry_warn=$(($NOW + ($CERTIFICATE_EXPIRY * 86400)))                                   # when to warn before expiry in seconds
+    expiry_warn=$(($expiry_now + ($CERTIFICATE_EXPIRY * 86400)))                            # when to warn before expiry in seconds
     not_after=$(echo -e "$CERT" | openssl x509 -noout -dates | tail -1 | cut -d "=" -f 2)   # get the "not after" date from cert
     expiry_date=$(date -d "$not_after" "+%s")                                               # get the expiry date in seconds
 
