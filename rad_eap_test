@@ -362,57 +362,57 @@ function check_settings()
   if [[ -z "$(which bc)" ]]
   then
     echo "bc is required by rad_eap_test, please install if first."
-    exit 1
+    return 1
   fi
 
   if [[ -z "$(which dig)" ]]
   then
     echo "dig is required by rad_eap_test, please install if first."
-    exit 1
+    return 1
   fi
 
   # check if eapol_test exists
   if [[ ! -e "$EAPOL_PROG" ]]
   then
     echo "eapol_test program \"$EAPOL_PROG\" not found"
-    exit 1
+    return 1
   fi
 
   # check if eapol_test is executable
   if [[ ! -x "$EAPOL_PROG" ]]
   then
     echo "eapol_test program \"$EAPOL_PROG\" is not executable"
-    exit 1
+    return 1
   fi
 
   if [[ -z "$ADDRESS" ]]
   then
     echo "Address of radius server is not specified. (option -H)"
-    exit 1
+    return 1
   fi
 
   if [[ -z "$PORT" ]]
   then
     echo "Port of radius server is not specified. (option -P)"
-    exit 1
+    return 1
   fi
 
   if [[ -z "$SECRET" ]]
   then
     echo "Secret for radius server communication is not specified. (option -S)"
-    exit 1
+    return 1
   fi
 
   if [[ -z "$USERNAME" ]]
   then
     echo "Username is not specified. (option -u)"
-    exit 1
+    return 1
   fi
 
   if [[ -z "$EAP" ]]
   then
     echo "EAP method is not specified. (option -e)"
-    exit 1
+    return 1
   fi
 
   if [[ "$EAP" = "TLS" ]]
@@ -421,45 +421,45 @@ function check_settings()
     if [[ -z "$USER_CRT" ]]
     then
       echo "User certificate file is not specified (EAP TLS method is used). (option -j)"
-      exit 1
+      return 1
     fi
 
     if [[ ! -f "$USER_CRT" ]]
     then
       echo "User certificate file doesn't exist. (option -j)"
-      exit 1
+      return 1
     fi
 
     if [[ -z "$USER_KEY" ]]
     then
       echo "User key file is not specified (EAP TLS method is used). (option -k)"
-      exit 1
+      return 1
     fi
 
     if [[ ! -f "$USER_KEY" ]]
     then
       echo "User private key file doesn't exist. (option -k)"
-      exit 1
+      return 1
     fi
 
   else  # $EAP != "TLS"
     if [[ -z "$PASSWORD" ]]
     then
       echo "Password is not specified. (option -p)"
-      exit 1
+      return 1
     fi
   fi
 
   if [[ -z "$METHOD" ]]
   then
     echo "Method is not specified. (option -m)"
-    exit 1
+    return 1
   fi
 
   if [[ -n "$CA_CRT" && ! -f "$CA_CRT" ]]
   then
     echo "Certificate authority file doesn't exist. (option -a)";
-    exit 1
+    return 1
   fi
 
   if [[ -z "$SSID" ]]
@@ -516,7 +516,7 @@ function check_settings()
   if [[ -z "$IP" ]]
   then
     echo "Hostname $ADDRESS could not be resolved to an IP address."
-    exit 1
+    return 1
   fi
 
   # use specified directory for temp files if it was set
@@ -541,6 +541,8 @@ function check_settings()
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
   fi
+
+  return 0
 }
 # ===========================================================================================
 # process command line options and their arguments
@@ -633,6 +635,12 @@ function main()
   default_config
   process_options "$@"
   check_settings
+
+  if [[ $? -ne 0 ]]     # print usage if some settings were incorrect
+  then
+    usage
+  fi
+
   generate_config
   authenticate
   process_auth_result
