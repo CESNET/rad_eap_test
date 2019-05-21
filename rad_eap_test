@@ -28,16 +28,19 @@ verbose()
 
     # print the last packet decoded
     1)
+      echo ""
       echo "$OUT" | sed -n '/(Access-Accept)/,$p'        # print from Access-Accept to the end
       ;;
 
     # print all the packets decoded
     2)
+      echo ""
       echo "$OUT" | awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print}'
       ;;
 
     # print the raw output of eapol_test
     3)
+      echo ""
       echo "$OUT"
       ;;
   esac
