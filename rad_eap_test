@@ -52,10 +52,10 @@ function process_cert()
   if [[ -n "$GET_CERT" ]]
    then
 
-    if [[ ! -e "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist
+    if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
     then
       echo ""
-      echo "certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
       print_cert
@@ -64,10 +64,10 @@ function process_cert()
   elif [[ -n "$WRITE_CERT" ]]
   then
 
-    if [[ ! -e "$WRITE_CERT" ]]  # cert file does not exist
+    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
     then
       echo ""
-      echo "certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info $WRITE_CERT
       print_cert
