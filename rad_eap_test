@@ -144,6 +144,7 @@ function authenticate()
   local succ1=$'SUCCESS'
   local succ2=$'CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
   local reject='Access-Reject'
+  local cert_err=$'CTRL-EVENT-EAP-TLS-CERT-ERROR'
 
   run_eapol_test
 
@@ -152,6 +153,10 @@ function authenticate()
   then
     RETURN_CODE=$RET_SUCC               # success
     STATUS_CODE="access-accept"
+  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_err ]]        # certifitace subject was speficied
+  then
+    RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
+    STATUS_CODE="access-reject"
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
   then
     RETURN_CODE=$RET_EAP_FAILED         # auth failed
@@ -626,6 +631,7 @@ function default_config()
   RET_SUCC=3
   RET_EAP_FAILED=4
   RET_RADIUS_NOT_AVAIL=5
+  RET_CERT_SUBJ_MISMATCH=6
 
   # cleanup temporary files?
   CLEANUP=1
