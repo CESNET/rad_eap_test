@@ -83,7 +83,7 @@ function process_cert()
 function print_out()
 {
   # print the output
-  printf "%s; %0.2f sec " $STATUS_CODE $TIME_SEC
+  printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
   printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
 
   verbose  # add extra verbose output if the user wants it, also process certs if wanted
