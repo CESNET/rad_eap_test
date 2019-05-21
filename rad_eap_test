@@ -80,7 +80,7 @@ function process_cert()
 function print_out()
 {
   # print the output
-  printf "access-accept; %0.2f sec " $TIME_SEC
+  printf "%s; %0.2f sec " $STATUS_CODE $TIME_SEC
   printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
 
   verbose  # add extra verbose output if the user wants it, also process certs if wanted
@@ -148,12 +148,15 @@ function authenticate()
   if [[ "$OUT" =~ $succ1 || "$OUT" =~ $succ2 ]]
   then
     RETURN_CODE=$RET_SUCC               # success
+    STATUS_CODE="access-accept"
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
   then
     RETURN_CODE=$RET_EAP_FAILED         # auth failed
+    STATUS_CODE="access-reject"
   elif [[ "$OUT" =~ $timeout ]]
   then
     RETURN_CODE=$RET_RADIUS_NOT_AVAIL   # timeout ?
+    STATUS_CODE="timeout"
   fi
 
   TIME_SEC=$(echo "$END - $BEGIN" | bc)        # how long the authentication took in seconds
