@@ -277,10 +277,13 @@ function cleanup()
     echo -e "\tConfiguration: $CONF"
     echo -e "\tOutput: $OUTFILE"
 
-    if [[ -z "$WRITE_CERT" ]]
+    if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
     then
       echo -e "\tRADIUS certiticate: ${MYTMPDIR}/RADIUS_cert.pem"
-    else
+    fi
+
+    if [[ -n "$WRITE_CERT" ]]
+    then
       echo -e "\tRADIUS certiticate: $WRITE_CERT"
     fi
   fi
