@@ -113,7 +113,6 @@ while true ; do
     -c) VERBOSE=2;  shift ;;
     -s) SSID=$2; shift 2 ;;
     -e) EAP=$2; shift 2;;
-    -t) TIMEOUT=$2; shift 2;;
     -M) MAC=$2; shift 2;;
     -i) CONN_INFO=$2; shift 2;;
     -d) STATUS_DIR="-d$2"; shift 2;;
