@@ -453,12 +453,12 @@ Parameters :
 -C - request Chargeable-User-Identity
 -T - send Called-Station-Id in MAC:SSID format
 -f - send big access-request to cause fragmentation
--b - print details about certificate of RADIUS server
+-b - print details about certificate of RADIUS server (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert and print it)
 -B <file> - save certificate of RADIUS server to specified file
 -n <directory> - store temporary files in specified directory
 -g - print the entire unmodified output of eapol_test
 -V - Show received Chargeable-User-Identity and/or Operator-Name
--X <warn_days> - check certificate expiry
+-X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
 -h - show this message
 " >&2
   exit 1
