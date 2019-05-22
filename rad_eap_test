@@ -672,7 +672,6 @@ function process_options()
       e) EAP=$OPTARG;;
       M) MAC=$OPTARG;;
       i) CONN_INFO=$OPTARG;;
-      d) STATUS_DIR="$OPTARG";;       # TODO - k cemu je tohle dobre?
       k) USER_KEY=$OPTARG;;
       j) USER_CRT=$OPTARG;;
       a) CA_CRT=$OPTARG;;
