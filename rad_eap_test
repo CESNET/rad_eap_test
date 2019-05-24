@@ -228,7 +228,8 @@ function authenticate()
   local succ2='CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
   local reject='Access-Reject'
   local cert_subj_mismatch="err='Subject mismatch'"
-  local cert_not_matching_ca="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_not_matching_ca1="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_not_matching_ca2="err='unable to get issuer certificate'"        # TODO - what about self-signed certs or so ?
   local cert_expired="err='certificate has expired'"
 
   run_eapol_test
@@ -244,7 +245,7 @@ function authenticate()
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
     STATUS_CODE="access-reject (certificate subject mismatch [$(echo "$OUT" | grep 'did not match with' | sed 's/TLS: Subject //')])"
 
-  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_not_matching_ca ]]        # CA was speficied
+  elif [[ -n "$CA_CRT" && ( "$OUT" =~ $cert_not_matching_ca1 || "$OUT" =~ $cert_not_matching_ca2 ) ]]        # CA was speficied
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
