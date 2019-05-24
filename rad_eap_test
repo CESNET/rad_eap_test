@@ -229,6 +229,7 @@ function authenticate()
   local reject='Access-Reject'
   local cert_subj_mismatch="err='Subject mismatch'"
   local cert_not_matching_ca="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_expired="err='certificate has expired'"
 
   run_eapol_test
 
@@ -247,6 +248,11 @@ function authenticate()
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
+
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired ]]        # certificate expired
+  then
+    RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate not matching CA
+    STATUS_CODE="access-reject (certificate expired)"
 
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
   then
