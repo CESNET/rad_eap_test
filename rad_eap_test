@@ -241,7 +241,7 @@ function authenticate()
   elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was speficied
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
-    STATUS_CODE="access-reject (certificate subject mismatch)"
+    STATUS_CODE="access-reject (certificate subject mismatch [$(echo "$OUT" | grep 'did not match with' | sed 's/TLS: Subject //')])"
 
   elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_not_matching_ca ]]        # CA was speficied
   then
