@@ -194,6 +194,12 @@ function process_auth_result()
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
       EXIT_CODE=2;;
 
+    $RET_CERT_EXPIRED)                      # cert expired
+      EXIT_CODE=2;;
+
+    $RET_DOMAIN_MISMATCH)                   # domain mismatch
+      EXIT_CODE=2;;
+
     *)                                      # other case is probably error
       PROG_OUT=$(echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE)
       EXIT_CODE=3;;
@@ -216,6 +222,42 @@ function run_eapol_test()
   END=$(date +%s.%N)        # end the "timer"
 }
 # ===========================================================================================
+# get details about domain name mismatch
+# ===========================================================================================
+function get_domain_mismatch_details()
+{
+  # simple parsing of important info using awk
+  echo "$OUT" | awk '
+    BEGIN { count = 0 }
+
+    /TLS: Match domain against/,/TLS: Domain match/ {                   # everyting between the two strings
+
+      if (match($0, /^TLS: Match domain against.*/))                    # ignore lines starting with "TLS: Match domain against."
+        next
+
+      if (match($0, /^TLS: None of the dNSName\(s\) matched.*/))        # ignore lines starting with "TLS: None of the dNSName(s) matched."
+        next
+
+      if(match($0, /^TLS: Certificate dNSName.*/) && count == 0) {      # first occurence of domain name, ignore it
+        count++
+        next
+      }
+
+      if(match($0, /^TLS: Certificate dNSName.*/)) {                    # other dns names, print comma after every domain name
+        printf(", ")
+        next
+      }
+
+      if(match($0, /^TLS: Domain match.*/)) {
+        printf(" not matching %s", $4)                                  # print the requested match
+        exit(0)     # end the program here
+      }
+
+      printf("%s", $NF)                                                 # print $NF
+    }
+  '
+}
+# ===========================================================================================
 # run eapol_test and try to authenticate using the specified configuration
 # ===========================================================================================
 function authenticate()
@@ -231,6 +273,7 @@ function authenticate()
   local cert_not_matching_ca1="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
   local cert_not_matching_ca2="err='unable to get issuer certificate'"        # TODO - what about self-signed certs or so ?
   local cert_expired="err='certificate has expired'"
+  local domain_mismatch="err='Domain mismatch'"
 
   run_eapol_test
 
@@ -239,6 +282,11 @@ function authenticate()
   then
     RETURN_CODE=$RET_SUCC               # success
     STATUS_CODE="access-accept"
+
+  elif [[ -n "$DOMAIN_MATCH" && "$OUT" =~ $domain_mismatch ]]        # domain match was speficied
+  then
+    RETURN_CODE=$RET_DOMAIN_MISMATCH         # domain name mismatch
+    STATUS_CODE="access-reject (domain mismatch [$(get_domain_mismatch_details)])"
 
   elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was speficied
   then
@@ -421,6 +469,11 @@ function generate_config()
     echo "  subject_match=\"$SUBJ_MATCH\"" >> $CONF
   fi
 
+  if [[ -n "$DOMAIN_MATCH" ]]
+  then
+    echo "  domain_match=\"$DOMAIN_MATCH\"" >> $CONF
+  fi
+
   echo "}" >> $CONF
 }
 # ===========================================================================================
@@ -447,7 +500,7 @@ Parameters :
 -e <method> - EAP method (PEAP | TLS | TTLS | LEAP)
 -M <mac_addr> - MAC address in xx:xx:xx:xx:xx:xx format
 -i <connect_info> - Connection info (in radius log: connect from <connect_info>)
--d <directory> - status directory (unified identifier of packets)
+-d <domain_name> - Constraint for server domain name. FQDN is used as a full match requirement for the server certificate. Multiple values may be specified. Multiple values must be separated by semicollon.
 -k <user_key_file> - user certificate key file
 -l <user_key_file_password> - password for user certificate key file
 -j <user_cert_file> - user certificate file
@@ -701,6 +754,7 @@ function process_options()
       g) VERBOSE=4;;
       V) VERBOSE=1;;
       X) CERTIFICATE_EXPIRY=$OPTARG;;
+      d) DOMAIN_MATCH="$OPTARG";;
       h) usage;;
       \?) usage;;
     esac
@@ -742,7 +796,9 @@ function default_config()
   RET_EAP_FAILED=4
   RET_RADIUS_NOT_AVAIL=5
   RET_CERT_SUBJ_MISMATCH=6
-  RET_CERT_CA_MISMATCH=6
+  RET_CERT_CA_MISMATCH=7
+  RET_CERT_EXPIRED=8
+  RET_DOMAIN_MISMATCH=9
 
   # cleanup temporary files?
   CLEANUP=1
