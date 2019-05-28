@@ -1,69 +1,496 @@
-#!/bin/sh
+#!/bin/bash
 
+# ===========================================================================================
 # rad_eapol_test nagios compatible wraper around eapol_test
-# Copyright (c) 2005-2016 CESNET, z.s.p.o.
-# Author: Pavel Poláček <pavel.polacek@ujep.cz>
+# Copyright (c) 2005-2019 CESNET, z.s.p.o.
+# Authors: Pavel Poláček <pavel.polacek@ujep.cz>
+#          Jan Tomášek <jan.tomasek@cesnet.cz>
+#          Václav Mach <vaclav.mach@cesnet.cz>
+#          and others
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
 # published by the Free Software Foundation.
 #
 # See README and COPYING for more details.
+# ===========================================================================================
 
-# umask
-umask 0077
 
-# path to eapol test
-EAPOL_PROG=/usr/local/bin/eapol_test
 
-# default verbosity
-VERBOSE=0
 
-# debug script
-DEBUG=1
+# ===========================================================================================
+# test certificate expiry based on user set number of days
+# ===========================================================================================
+function test_cert_expiry()
+{
+  local not_after
+  local expiry_now
+  local expiry_warn
+  local expiry_date
 
-#default timeout
-TIMEOUT=5
+  # certicite expiry was set
+  if [[ -n "$CERTIFICATE_EXPIRY" ]]
+  then
+    process_cert_expiry    # get the cert info needed
 
-#default mac address
-MAC="70:6f:6c:69:73:68"
+    if [[ $? -ne 0 ]]       # no cert available
+    then
+      return
+    fi
 
-# default connection info
-CONN_INFO="rad_eap_test + eapol_test"
+    expiry_now=$(date +%s)                                                                  # current date in seconds
+    expiry_warn=$(($expiry_now + ($CERTIFICATE_EXPIRY * 86400)))                            # when to warn before expiry in seconds
+    not_after=$(echo -e "$CERT" | openssl x509 -noout -dates | tail -1 | cut -d "=" -f 2)   # get the "not after" date from cert
+    expiry_date=$(date -d "$not_after" "+%s")                                               # get the expiry date in seconds
 
-# return codes
-RET_SUCC=3
-RET_EAP_FAILED=4
-RET_RADIUS_NOT_AVAIL=5
 
-#cleanup?
-CLEANUP=1
+    # do the actual expiry testing
+    if [[ $expiry_date -lt $expiry_now ]]
+    then
+      PROG_OUT=$(printf "CRITICAL: certificate EXPIRED %s\n" $(date -d "@$expiry_date" -Idate))
+      EXIT_CODE=2
 
-# exist eapol_test program ?
-if [ ! -x "$EAPOL_PROG" ]; then # exact path?
-  if [ ! -x `which $EAPOL_PROG` ]; then # is program on path?
-    if [ -x "./$EAPOL_PROG" ]; then # is program in actual directory?
-      EAPOL_PROG="./$EAPOL_PROG"
-    else
-      echo "eapol_test program \"$EAPOL_PROG\" not found"
-      exit 3;
+    elif [[ $expiry_date -lt $expiry_warn ]]
+    then
+      PROG_OUT=$(printf "WARNING: cerificate expires soon (%s)\n" $(date -d "@$expiry_date" -Idate))
+      EXIT_CODE=1
     fi
   fi
-fi
+}
+# ===========================================================================================
+# add verbose info based on user set level
+# ===========================================================================================
+verbose()
+{
+  # further processing based on VERBOSE level
+  case "$VERBOSE" in
+    0) ;;       # nothing to do here, just an empty branch
 
-TEMP=`getopt -o H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB: -- "$@"`
+    # Show received Chargeable-User-Identity and/or Operator-Name
+    1)
+      echo ""
+      echo "$OUT" | sed -n '/(Access-Accept)/,$p' | awk '/Attribute (89|126) / { a=$3 } /Value: / && a { print a " " $2; a="" }'        # get Attribute 89 or 126 and print the value
+      ;;
 
-myhelp() {
-  echo "# wrapper script around eapol_test from wpa_supplicant project
-# script generates configuration for eapol_test and runs it
-# eapol_test is program for testing RADIUS and their EAP methods authentication
+    # print the last packet decoded
+    2)
+      echo ""
+      echo "$OUT" | sed -n '/(Access-Accept)/,$p'        # print from Access-Accept to the end
+      ;;
+
+    # print all the packets decoded
+    3)
+      echo ""
+      echo "$OUT" | awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print}'
+      ;;
+
+    # print the raw output of eapol_test
+    4)
+      echo ""
+      echo "$OUT"
+      ;;
+  esac
+
+  process_cert      # also process certificates if wanted
+}
+# ===========================================================================================
+# process RADIUS certificate for expiry check
+# ===========================================================================================
+function process_cert_expiry()
+{
+  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+   then
+
+    if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
+    then
+      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      EXIT_CODE=2
+      return 1      # cert not retrieved
+    else
+      get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
+    fi
+
+  elif [[ -n "$WRITE_CERT" ]]
+  then
+    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
+    then
+      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      EXIT_CODE=2
+      return 1      # cert not retrieved
+    else
+      get_cert_info $WRITE_CERT
+    fi
+  fi
+
+  return 0      # no error
+}
+# ===========================================================================================
+# process RADIUS certificate
+# ===========================================================================================
+function process_cert()
+{
+  if [[ -n "$GET_CERT" ]]
+   then
+
+    if [[ -n "$WRITE_CERT" ]]       # process cert only if GET_CERT was speficied together with WRITE_CERT
+    then
+      if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
+      then
+        echo ""
+        echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      else
+        get_cert_info $WRITE_CERT
+        print_cert
+      fi
+
+    else
+      if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
+      then
+        echo ""
+        echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      else
+        get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
+        print_cert
+      fi
+    fi
+  fi
+}
+# ===========================================================================================
+# print final outpupt
+# ===========================================================================================
+function print_out()
+{
+  echo "$PROG_OUT" # print the output
+  verbose  # add extra verbose output if the user wants it, also process certs if wanted
+  cleanup  # cleanup temp files
+}
+# ===========================================================================================
+# process results of the authentication and present them to the user
+# ===========================================================================================
+function process_auth_result()
+{
+  EXIT_CODE=0
+
+  # preset output needed for most situations
+  PROG_OUT=$(
+              printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
+              printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
+            )
+
+  # processing based on $RETURN_CODE
+  case "$RETURN_CODE" in
+    $RET_SUCC)                              # successfull authentication
+      ;;                                    # nothing to do here, EXIT_CODE is preset to 0
+
+    $RET_EAP_FAILED)                        # wrong username or password
+      EXIT_CODE=2;;
+
+    $RET_RADIUS_NOT_AVAIL)                  # timeout
+      EXIT_CODE=2;;
+
+    $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
+      EXIT_CODE=2;;
+
+    $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
+      EXIT_CODE=2;;
+
+    $RET_CERT_EXPIRED)                      # cert expired
+      EXIT_CODE=2;;
+
+    $RET_DOMAIN_MISMATCH)                   # domain mismatch
+      EXIT_CODE=2;;
+
+    *)                                      # other case is probably error
+      PROG_OUT=$(echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE)
+      EXIT_CODE=3;;
+  esac
+
+  test_cert_expiry      # test cert expiry dates if requested, may override EXIT_CODE
+  print_out             # print output, add verbose output if requsted and cleanup
+  exit $EXIT_CODE       # exit with $EXIT_CODE
+}
+# ===========================================================================================
+# run eapol_test
+# ===========================================================================================
+function run_eapol_test()
+{
+  BEGIN=$(date +%s.%N)      # start the "timer"
+
+  # try to authenticate
+  OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" $EXTRA_EAPOL_ARGS "$STATUS_DIR" 2>&1)      # save output as a variable
+
+  END=$(date +%s.%N)        # end the "timer"
+}
+# ===========================================================================================
+# get details about domain name mismatch
+# ===========================================================================================
+function get_domain_mismatch_details()
+{
+  # simple parsing of important info using awk
+  echo "$OUT" | awk '
+    BEGIN { count = 0 }
+
+    /TLS: Match domain against/,/TLS: Domain match/ {                   # everyting between the two strings
+
+      if (match($0, /^TLS: Match domain against.*/))                    # ignore lines starting with "TLS: Match domain against."
+        next
+
+      if (match($0, /^TLS: None of the dNSName\(s\) matched.*/))        # ignore lines starting with "TLS: None of the dNSName(s) matched."
+        next
+
+      if(match($0, /^TLS: Certificate dNSName.*/) && count == 0) {      # first occurence of domain name, ignore it
+        count++
+        next
+      }
+
+      if(match($0, /^TLS: Certificate dNSName.*/)) {                    # other dns names, print comma after every domain name
+        printf(", ")
+        next
+      }
+
+      if(match($0, /^TLS: Domain match.*/)) {
+        printf(" not matching %s", $4)                                  # print the requested match
+        exit(0)     # end the program here
+      }
+
+      printf("%s", $NF)                                                 # print $NF
+    }
+  '
+}
+# ===========================================================================================
+# run eapol_test and try to authenticate using the specified configuration
+# ===========================================================================================
+function authenticate()
+{
+  # constants which define return codes based on eapol_test output
+  local eap_fail1='CTRL-EVENT-EAP-FAILURE EAP authentication failed'
+  local eap_fail2='EAP: Received EAP-Failure'
+  local timeout='EAPOL test timed out'
+  local succ1='SUCCESS'
+  local succ2='CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
+  local reject='Access-Reject'
+  local cert_subj_mismatch="err='Subject mismatch'"
+  local cert_not_matching_ca1="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_not_matching_ca2="err='unable to get issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_expired="err='certificate has expired'"
+  local domain_mismatch="err='Domain mismatch'"
+
+  run_eapol_test
+
+  # determine the RETURN_CODE based on specific constants used in eapol_test output
+  if [[ "$OUT" =~ $succ1 || "$OUT" =~ $succ2 ]]
+  then
+    RETURN_CODE=$RET_SUCC               # success
+    STATUS_CODE="access-accept"
+
+  elif [[ -n "$DOMAIN_MATCH" && "$OUT" =~ $domain_mismatch ]]        # domain match was speficied
+  then
+    RETURN_CODE=$RET_DOMAIN_MISMATCH         # domain name mismatch
+    STATUS_CODE="access-reject (domain mismatch [$(get_domain_mismatch_details)])"
+
+  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was speficied
+  then
+    RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
+    STATUS_CODE="access-reject (certificate subject mismatch [$(echo "$OUT" | grep 'did not match with' | sed 's/TLS: Subject //')])"
+
+  elif [[ -n "$CA_CRT" && ( "$OUT" =~ $cert_not_matching_ca1 || "$OUT" =~ $cert_not_matching_ca2 ) ]]        # CA was speficied
+  then
+    RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
+    STATUS_CODE="access-reject (certificate not matching specified CA)"
+
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired ]]        # certificate expired
+  then
+    RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
+    STATUS_CODE="access-reject (certificate expired)"
+
+  elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
+  then
+    RETURN_CODE=$RET_EAP_FAILED         # auth failed
+    STATUS_CODE="access-reject"
+
+  elif [[ "$OUT" =~ $timeout ]]
+  then
+    RETURN_CODE=$RET_RADIUS_NOT_AVAIL   # timeout ?
+    STATUS_CODE="timeout"
+  fi
+
+  TIME_SEC=$(echo "$END - $BEGIN" | bc)        # how long the authentication took in seconds
+  TIME_MSEC=$(echo "$TIME_SEC * 1000" | bc)           # how long the authentication took in milliseconds
+}
+# ===========================================================================================
+# cleanup temporary files
+# ===========================================================================================
+function cleanup()
+{
+  if [[ $CLEANUP -eq 1 ]]
+  then
+    rm -r $MYTMPDIR         # delete all temp files
+  else
+    echo "$OUT" > $OUTFILE  # write raw eapol_test output to temp file
+
+    echo "Leaving temporary files in $MYTMPDIR"
+    echo -e "\tConfiguration: $CONF"
+    echo -e "\tOutput: $OUTFILE"
+
+    if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+    then
+      echo -e "\tRADIUS certiticate: ${MYTMPDIR}/RADIUS_cert.pem"
+    fi
+
+    if [[ -n "$WRITE_CERT" ]]
+    then
+      echo -e "\tRADIUS certiticate: $WRITE_CERT"
+    fi
+  fi
+}
+# ===========================================================================================
+# print certificate information
+# ===========================================================================================
+function print_cert()
+{
+  printf "\n"
+  printf "RADIUS server certificate information:\n"
+  printf "%s\n" "$(echo -e "$CERT" | openssl x509 -noout -issuer -subject -dates |   # extract issuer, subject, dates
+                 sed 's/issuer=/Issuer: /; s/subject=/Subject: /; s/notBefore=/Validity\nNot Before: /; s/notAfter=/Not After: /')" # more readable output
+
+  printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"     # DNS names cannot be extracted directly by openssl
+}
+# ===========================================================================================
+# check that cert is end server cert - not root or intermediate cert
+# params:
+# 1) cert to check (as text)
+# ===========================================================================================
+function check_cert()
+{
+  # we're only looking for cert that does not contain 'CA:TRUE' flag
+  res=$(echo -e "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
+
+  if [[ -z "$res" ]]
+  then
+    return 0        # the cert is for end server
+  else
+    return 1        # intermediate or root
+  fi
+}
+# ===========================================================================================
+# get RADIUS server certificate info
+# params:
+# 1) path to the cert
+# ===========================================================================================
+function get_cert_info()
+{
+  in=false
+
+  if [[ -n "$cert_info" && -n "$CERT" ]]        # both $CERT and $cert_info already set, no need to process certs again
+  then
+    return
+  fi
+
+  # read cert file line by line
+  while read line
+  do
+    if [[ "$in" = "true" ]]
+    then
+      CERT="$CERT\n$line"
+    fi
+
+    if [[ "$line" = "-----BEGIN CERTIFICATE-----" ]]
+    then
+      in=true
+      CERT="$line"
+    fi
+
+    if [[ "$line" = "-----END CERTIFICATE-----" ]]
+    then
+      in=false
+      check_cert "$CERT"
+
+      if [[ $? -eq 0 ]]   # correct cert
+      then
+        cert_info=$(echo -e "$CERT" | openssl x509 -nameopt utf8 -text -noout)
+        break
+      fi
+    fi
+  done < "$1"
+
+  # no cert seemed correct as end server cert
+  # take the last one processed
+  if [[ -z "$cert_info" ]]
+  then
+    cert_info=$(echo -e "$CERT" | openssl x509 -nameopt utf8 -text -noout)
+  fi
+}
+
+# ===========================================================================================
+# generate configuration for eapol_test
+# ===========================================================================================
+function generate_config()
+{
+  echo "network={" > $CONF
+  echo "  ssid=\"$SSID\"" >> $CONF
+  echo "  key_mgmt=$METHOD" >> $CONF
+
+  echo "  eap=$EAP" >> $CONF
+
+  if [[ "$EAP" = "PEAP" || "$EAP" = "TTLS" ]]
+  then
+    echo "  pairwise=CCMP TKIP" >> $CONF
+    echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
+    echo "  phase2=\"auth=$PHASE2\"" >> $CONF
+  fi
+
+  if [[ ! -z "$CA_CRT" ]]
+  then
+    echo "  ca_cert=\"$CA_CRT\"" >> $CONF
+  fi
+
+  echo "  identity=\"$USERNAME\"" >> $CONF
+
+  if [[ ! -z "$ANONYM_ID" ]]
+  then
+    echo "  anonymous_identity=\"$ANONYM_ID\"" >> $CONF
+  fi
+
+  if [[ "$EAP" = "TLS" ]]
+  then
+    echo "  client_cert=\"$USER_CRT\"" >> $CONF
+    echo "  private_key=\"$USER_KEY\"" >> $CONF
+
+    if [[ ! -z "$KEY_PASS" ]]
+    then
+      echo "  private_key_passwd=\"$KEY_PASS\"" >> $CONF
+    fi
+  else
+    echo "  password=\"$PASSWORD\"" >> $CONF
+  fi
+
+  if [[ -n "$SUBJ_MATCH" ]]
+  then
+    echo "  subject_match=\"$SUBJ_MATCH\"" >> $CONF
+  fi
+
+  if [[ -n "$DOMAIN_MATCH" ]]
+  then
+    echo "  domain_match=\"$DOMAIN_MATCH\"" >> $CONF
+  fi
+
+  echo "}" >> $CONF
+}
+# ===========================================================================================
+# print usage for the program
+# ===========================================================================================
+function usage()
+{
+  echo "# this program is a wrapper for eapol_test from wpa_supplicant project
+# this script generates configuration for eapol_test and runs it
+# eapol_test is a program for testing RADIUS protocol and EAP authentication methods
 
 Parameters :
--H <address> - Address of radius server
+-H <address> - Address of radius server (DNS name or IP address)
 -P <port> - Port of radius server
 -S <secret> - Secret for radius server communication
--u <username> - Username (user@realm)
--A <anonymous_id> - Anonymous identity (anonymous_user@realm)
+-u <username> - Username (user@realm.tld)
+-A <anonymous_id> - Anonymous identity (anonymous_user@realm.tld)
 -p <password> - Password
 -t <timeout> - Timeout (default is 5 seconds)
 -m <method> - Method (WPA-EAP | IEEE8021X )
@@ -73,7 +500,7 @@ Parameters :
 -e <method> - EAP method (PEAP | TLS | TTLS | LEAP)
 -M <mac_addr> - MAC address in xx:xx:xx:xx:xx:xx format
 -i <connect_info> - Connection info (in radius log: connect from <connect_info>)
--d <directory> - status directory (unified identifier of packets)
+-d <domain_name> - Constraint for server domain name. FQDN is used as a full match requirement for the server certificate. Multiple values may be specified. Multiple values must be separated by semicollon.
 -k <user_key_file> - user certificate key file
 -l <user_key_file_password> - password for user certificate key file
 -j <user_cert_file> - user certificate file
@@ -86,412 +513,324 @@ Parameters :
 -C - request Chargeable-User-Identity
 -T - send Called-Station-Id in MAC:SSID format
 -f - send big access-request to cause fragmentation
--b - print details about certificate of RADIUS server
+-b - print details about certificate of RADIUS server (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert and print it)
 -B <file> - save certificate of RADIUS server to specified file
+-n <directory> - store temporary files in specified directory
+-g - print the entire unmodified output of eapol_test
+-V - Show received Chargeable-User-Identity and/or Operator-Name
+-X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
 -h - show this message
-" >&2;
-  exit 1;
+" >&2
+  exit 1
 }
-
-if [ -z $1 ] ; then
-  myhelp
-fi
-
-eval set -- "$TEMP"
-
-while true ; do
-
-  case "$1" in
-    -H) ADRESS=$2; shift 2 ;;
-    -P) PORT=$2; shift 2 ;;
-    -S) SECRET=$2; shift 2 ;;
-    -u) USERNAME=$2; shift 2 ;;
-    -p) PASSWORD=$2; shift 2 ;;
-    -t) TIMEOUT=$2; shift 2 ;;
-    -m) METHOD=$2; shift 2 ;;
-    -v) VERBOSE=1;  shift ;;
-    -c) VERBOSE=2;  shift ;;
-    -s) SSID=$2; shift 2 ;;
-    -e) EAP=$2; shift 2;;
-    -M) MAC=$2; shift 2;;
-    -i) CONN_INFO=$2; shift 2;;
-    -d) STATUS_DIR="-d$2"; shift 2;;
-    -k) USER_KEY=$2; shift 2;;
-    -j) USER_CRT=$2; shift 2;;
-    -a) CA_CRT=$2; shift 2;;
-    -A) ANONYM_ID=$2; shift 2;;
-    -l) KEY_PASS=$2; shift 2;;
-    -2) PHASE2=$2; shift 2;;
-    -N) CLEANUP=0; shift ;;
-    -x) SUBJ_MATCH=$2; shift 2;;
-    -O) OPERATOR_NAME=$2; shift 2;;
-    -I) NAS_IP_ADDRESS=$2; shift 2;;
-    -C) REQUEST_CUI="YES"; shift ;;
-    -T) CALLED_STATION_ID="YES"; shift ;;
-    -f) FRAGMENT="YES"; shift ;;
-    -b) GET_CERT="YES"; shift ;;
-    -B) WRITE_CERT=$2; shift 2;;
-    -h) myhelp; shift ;;
-    --) break ;;
-    *) echo "Unknown option"; shift ;;  # I mean that getopt throws out unrecongized options, therefore this line cannot be running
-  esac
-done
-
-# necessarily options
-if [ -z $ADRESS ]; then
-  echo "Address of radius server is not specified. (option -H)"
-  exit 3;
-fi
-
-if [ -z $PORT ]; then
-  echo "Port of radius server is not specified. (option -P)"
-  exit 3;
-fi
-
-if [ -z $SECRET ]; then
-  echo "Secret for radius server communication is not specified. (option -S)"
-  exit 3;
-fi
-
-if [ -z $USERNAME ]; then
-  echo "Username is not specified. (option -u)"
-  exit 3;
-fi
-
-if [ -z $EAP ]; then
-  echo "EAP method is not specified. (option -e)"
-  exit 3;
-fi
-
-if [ "$EAP" = "TLS" ]; then
-  # we need certificate instead of password
-  if [ -z $USER_CRT ]; then
-    echo "User certificate file is not specified (EAP TLS method is used). (option -j)"
-    exit 3;
+# ===========================================================================================
+# check configuration parameters, environment and various other things
+# ===========================================================================================
+function check_settings()
+{
+  # check dependencies used in this script
+  if [[ -z "$(which bc)" ]]
+  then
+    echo "bc is required by rad_eap_test, please install if first."
+    return 1
   fi
 
-  if [ ! -f $USER_CRT ]; then
-    echo "User certificate file doesn't exist. (option -j)"
-    exit 3;
+  if [[ -z "$(which dig)" ]]
+  then
+    echo "dig is required by rad_eap_test, please install if first."
+    return 1
   fi
 
-  if [ -z $USER_KEY ]; then
-    echo "User key file is not specified (EAP TLS method is used). (option -k)"
-    exit 3;
+  # check if eapol_test exists
+  if [[ ! -e "$EAPOL_PROG" ]]
+  then
+    echo "eapol_test program \"$EAPOL_PROG\" not found"
+    return 1
   fi
 
-  if [ ! -f $USER_KEY ]; then
-    echo "User private key file doesn't exist. (option -k)"
-    exit 3;
+  # check if eapol_test is executable
+  if [[ ! -x "$EAPOL_PROG" ]]
+  then
+    echo "eapol_test program \"$EAPOL_PROG\" is not executable"
+    return 1
   fi
-else
 
-  if [ -z $PASSWORD ]; then
-    echo "Password is not specified. (option -p)"
-    exit 3;
+  if [[ -z "$ADDRESS" ]]
+  then
+    echo "Address of radius server is not specified. (option -H)"
+    return 1
   fi
-fi
 
-if [ -z $METHOD ]; then
-  echo "Method is not specified. (option -m)"
-  exit 3;
-fi
+  if [[ -z "$PORT" ]]
+  then
+    echo "Port of radius server is not specified. (option -P)"
+    return 1
+  fi
 
-if [ ! -z $CA_CRT ]; then
-  if [ ! -f $CA_CRT ]; then
+  if [[ -z "$SECRET" ]]
+  then
+    echo "Secret for radius server communication is not specified. (option -S)"
+    return 1
+  fi
+
+  if [[ -z "$USERNAME" ]]
+  then
+    echo "Username is not specified. (option -u)"
+    return 1
+  fi
+
+  if [[ -z "$EAP" ]]
+  then
+    echo "EAP method is not specified. (option -e)"
+    return 1
+  fi
+
+  if [[ "$EAP" = "TLS" ]]
+  then
+    # we need certificate instead of password
+    if [[ -z "$USER_CRT" ]]
+    then
+      echo "User certificate file is not specified (EAP TLS method is used). (option -j)"
+      return 1
+    fi
+
+    if [[ ! -f "$USER_CRT" ]]
+    then
+      echo "User certificate file doesn't exist. (option -j)"
+      return 1
+    fi
+
+    if [[ -z "$USER_KEY" ]]
+    then
+      echo "User key file is not specified (EAP TLS method is used). (option -k)"
+      return 1
+    fi
+
+    if [[ ! -f "$USER_KEY" ]]
+    then
+      echo "User private key file doesn't exist. (option -k)"
+      return 1
+    fi
+
+  else  # $EAP != "TLS"
+    if [[ -z "$PASSWORD" ]]
+    then
+      echo "Password is not specified. (option -p)"
+      return 1
+    fi
+  fi
+
+  if [[ -z "$METHOD" ]]
+  then
+    echo "Method is not specified. (option -m)"
+    return 1
+  fi
+
+  if [[ -n "$CA_CRT" && ! -f "$CA_CRT" ]]
+  then
     echo "Certificate authority file doesn't exist. (option -a)";
-    exit 3;
+    return 1
   fi
-fi
 
-if [ -z $SSID ]; then
-  SSID="eduroam";
-fi
-
-if [ -z $PHASE2 ]; then
-  PHASE2="MSCHAPV2"
-fi
-
-if [ -n "$OPERATOR_NAME" ] ; then
-  # prefix the Operator_Name with NamespaceID value "1" (REALM) as per RFC5580
-  EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N126:s:1$OPERATOR_NAME"
-fi
-
-if [ -n "$NAS_IP_ADDRESS" ] ; then
-  NAS_IP_ADDRESS_HEX=$( printf '%02x%02x%02x%02x' $( echo "$NAS_IP_ADDRESS" | tr '.' ' ' ) )
-  EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N4:x:$NAS_IP_ADDRESS_HEX"
-fi
-
-if [ -n "$REQUEST_CUI" ] ; then
-  EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
-fi
-
-if [ -n "$FRAGMENT" ] ; then
-  for i in `seq 1 6` ; do
-    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N26:x:0000625A0BF961616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161"
-  done
-fi
-
-if [ -n "$CALLED_STATION_ID" ] ; then
-	DASHEDMAC=`echo $MAC | sed 's/:/-/g' | tr a-z A-Z`
-	EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N30:s:$DASHEDMAC:$SSID"
-fi
-
-# address may be address or ip address
-IP=`echo $ADRESS | grep --regexp="^[[:digit:]+\.[:digit:]+\.[:digit:]+\.[:digit:]]"`
-if [ -z "$IP" ]; then
-  #IP=`host $ADRESS | tail -n 1 | awk '{print $3}'`
-  IP=`dig +noall +answer +search $ADRESS | tr \\\t ' ' | grep ' IN A ' | sed "s/.* IN A //"`
-fi
-
-# Sanity check: did we get an IP address?
-if [ -z "$IP" ] ; then
-  echo "Hostname $ADRESS could not be resolved to an IP address."
-  exit 2;
-fi
-
-#echo $IP
-
-# temporary file of eapol_test configuration
-if [ -z $TMPDIR ]; then
-  MYTMPDIR=`mktemp -d /tmp/rad_eap_test.XXXXXX`
-else
-  MYTMPDIR=`mktemp -d $TMPDIR/rad_eap_test.XXXXXX`
-fi
-
-CONF=$MYTMPDIR/tmp-$$
-OUT=$CONF.out
-OUT2=$CONF.out2
-
-#echo $CONF $OUT
-
-# RADIUS server cert
-if [ -n "$WRITE_CERT" ]; then
-  EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
-elif [ -n "$GET_CERT" ]; then
-  EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
-fi
-
-
-# generation of configuration
-echo "network={" > $CONF
-echo "  ssid=\"$SSID\"" >> $CONF
-echo "  key_mgmt=$METHOD" >> $CONF
-
-echo "  eap=$EAP" >> $CONF
-
-if [ "$EAP" = "PEAP" -o "$EAP" = "TTLS" ]; then
-  echo "  pairwise=CCMP TKIP" >> $CONF
-  echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
-  echo "  phase2=\"auth=$PHASE2\"" >> $CONF
-fi
-
-if [ ! -z $CA_CRT ]; then
-  echo "  ca_cert=\"$CA_CRT\"" >> $CONF
-fi
-
-echo "  identity=\"$USERNAME\"" >> $CONF
-
-if [ ! -z $ANONYM_ID ]; then
-  echo "  anonymous_identity=\"$ANONYM_ID\"" >> $CONF
-fi
-
-if [ "$EAP" = "TLS" ]; then
-  echo "  client_cert=\"$USER_CRT\"" >> $CONF
-  echo "  private_key=\"$USER_KEY\"" >> $CONF
-  if [ ! -z "$KEY_PASS" ]; then
-    echo "  private_key_passwd=\"$KEY_PASS\"" >> $CONF
-  fi
-else
-  echo "  password=\"$PASSWORD\"" >> $CONF
-fi
-
-if [ -n "$SUBJ_MATCH" ]; then
-  echo "  subject_match=\"$SUBJ_MATCH\"" >> $CONF
-fi
-
-echo "}" >> $CONF
-
-#echo $EAP
-#cat $CONF
-
-# garbage
-garbage() {
-  if [ $CLEANUP -eq 1 ]; then
-    # exception occur => remove files
-    rm $CONF $OUT
-
-    # delete cert file only if cert download is not desired
-    if [ -n "$GET_CERT" -a -z "$WRITE_CERT" ]; then
-      rm ${MYTMPDIR}/RADIUS_cert.pem
-    fi
-    rmdir $MYTMPDIR
-  else
-    if [ $CLEANUP -eq 0 ]; then
-      echo "Leaving temporary files in $MYTMPDIR"
-      echo -e "\tConfiguration: $CONF"
-      echo -e "\tOutput: $OUT"
-    fi
-  fi
-}
-
-trap "garbage ; exit 2" INT TERM
-
-
-# ===========================================================================================
-# check that cert is end server cert - not root or intermediate cert
-# params:
-# 1) cert to check (as text)
-# ===========================================================================================
-check_cert()
-{
-  # we're only looking for cert that does not contain 'CA:TRUE' flag
-  res=$(echo "$1" | openssl x509 -text -noout | grep 'CA:TRUE')
-
-  if [ -z "$res" ]
+  if [[ -z "$SSID" ]]
   then
-    return 0        # the cert is for end server
-  else
-    return 1        # intermediate or root
+    SSID="eduroam";
   fi
+
+  if [[ -z "$PHASE2" ]]
+  then
+    PHASE2="MSCHAPV2"
+  fi
+
+  if [[ -n "$OPERATOR_NAME" ]]
+  then
+    # prefix the Operator_Name with NamespaceID value "1" (REALM) as per RFC5580
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N126:s:1$OPERATOR_NAME"
+  fi
+
+  if [[ -n "$NAS_IP_ADDRESS" ]]
+  then
+    NAS_IP_ADDRESS_HEX=$(printf '%02x%02x%02x%02x' $(echo "$NAS_IP_ADDRESS" | tr '.' ' ' ))
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N4:x:$NAS_IP_ADDRESS_HEX"
+  fi
+
+  if [[ -n "$REQUEST_CUI" ]]
+  then
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
+  fi
+
+  if [[ -n "$FRAGMENT" ]]
+  then
+    for i in $(seq 1 6)
+    do
+      EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N26:x:0000625A0BF961616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161"
+    done
+  fi
+
+  if [[ -n "$CALLED_STATION_ID" ]]
+  then
+    DASHEDMAC=$(echo "$MAC" | tr ':a-z' '-A-Z')   # replace ':' with '-' and convert all lowercase to uppercase
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N30:s:$DASHEDMAC:$SSID"
+  fi
+
+  # address may be DNS name or an IPv4 address
+  # IPv4
+  IP=$(echo "$ADDRESS" | grep -P '^(\d{1,3}\.){3}\d{1,3}$')
+
+  # IPv6
+  if [[ -z "$IP" ]] # IPv6 regex taken from https://www.regextester.com/96774
+  then
+    IP=$(echo "$ADDRESS" | grep -P '^(?:(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){6})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:::(?:(?:(?:[0-9a-fA-F]{1,4})):){5})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){4})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,1}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){3})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,2}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:(?:[0-9a-fA-F]{1,4})):){2})(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,3}(?:(?:[0-9a-fA-F]{1,4})))?::(?:(?:[0-9a-fA-F]{1,4})):)(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,4}(?:(?:[0-9a-fA-F]{1,4})))?::)(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,5}(?:(?:[0-9a-fA-F]{1,4})))?::)(?:(?:[0-9a-fA-F]{1,4})))|(?:(?:(?:(?:(?:(?:[0-9a-fA-F]{1,4})):){0,6}(?:(?:[0-9a-fA-F]{1,4})))?::))))$')
+  fi
+
+  if [[ -z "$IP" ]]
+  then
+    IP=$(dig +short "$ADDRESS")
+  fi
+
+  # Sanity check: did we get an IP address?
+  if [[ -z "$IP" ]]
+  then
+    echo "Hostname $ADDRESS could not be resolved to an IP address."
+    return 1
+  fi
+
+  # use specified directory for temp files if it was set
+  if [[ -z "$TMPDIR" ]]
+  then
+    MYTMPDIR=$(mktemp -d /tmp/rad_eap_test.XXXXXX)
+  else
+    MYTMPDIR=$(mktemp -d $TMPDIR/rad_eap_test.XXXXXX)
+  fi
+
+  # configuration files
+  CONF=$MYTMPDIR/tmp-$$.conf
+  OUTFILE=$MYTMPDIR/tmp-$$.out
+
+  # RADIUS server cert
+  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+  then
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
+  fi
+
+  if [[ -n "$WRITE_CERT" ]]
+  then
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
+  fi
+
+  return 0
 }
 # ===========================================================================================
-# get RADIUS server certificate info
-# params:
-# 1) path to the cert
+# process command line options and their arguments
 # ===========================================================================================
-get_cert_info()
+function process_options()
 {
-  in=false
-
-  # read cert file line by line
-  while read line
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:" opt
   do
-    if [ "$in" = "true" ]
-    then
-      tmp="$tmp\n$line"
-    fi
-
-    if [ "$line" = "-----BEGIN CERTIFICATE-----" ]
-    then
-      in=true
-      tmp="$line"
-    fi
-
-    if [ "$line" = "-----END CERTIFICATE-----" ]
-    then
-      in=false
-      check_cert "$tmp"
-
-      if [ $? -eq 0 ]   # correct cert
-      then
-        cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
-        break
-      fi
-    fi
-
-  done < "$1"
-
-  # no cert seemed correct as end server cert
-  # take the last one processed
-  if [ -z "$cert_info" ]
-  then
-    cert_info=$(echo "$tmp" | openssl x509 -nameopt utf8 -text -noout)
-  fi
+    case "$opt" in
+      H) ADDRESS=$OPTARG;;
+      P) PORT=$OPTARG;;
+      S) SECRET=$OPTARG;;
+      u) USERNAME=$OPTARG;;
+      p) PASSWORD=$OPTARG;;
+      t) TIMEOUT=$OPTARG;;
+      m) METHOD=$OPTARG;;
+      v) VERBOSE=2;;
+      c) VERBOSE=3;;
+      s) SSID=$OPTARG;;
+      e) EAP=$OPTARG;;
+      M) MAC=$OPTARG;;
+      i) CONN_INFO=$OPTARG;;
+      k) USER_KEY=$OPTARG;;
+      j) USER_CRT=$OPTARG;;
+      a) CA_CRT=$OPTARG;;
+      A) ANONYM_ID=$OPTARG;;
+      l) KEY_PASS=$OPTARG;;
+      2) PHASE2=$OPTARG;;
+      N) CLEANUP=0;;
+      x) SUBJ_MATCH=$OPTARG;;
+      O) OPERATOR_NAME=$OPTARG;;
+      I) NAS_IP_ADDRESS=$OPTARG;;
+      C) REQUEST_CUI="YES";;
+      T) CALLED_STATION_ID="YES";;
+      f) FRAGMENT="YES";;
+      b) GET_CERT="YES";;
+      B) WRITE_CERT=$OPTARG;;
+      n) TMPDIR=$OPTARG;;
+      g) VERBOSE=4;;
+      V) VERBOSE=1;;
+      X) CERTIFICATE_EXPIRY=$OPTARG;;
+      d) DOMAIN_MATCH="$OPTARG";;
+      h) usage;;
+      \?) usage;;
+    esac
+  done
+  shift $((OPTIND-1))
 }
+# ===========================================================================================
+# set the default configuration
+# ===========================================================================================
+function default_config()
+{
+  # umask - make the files created readable only by the current user
+  umask 0077
 
+  # path to eapol_test
+  # try to determine the path automatically first
+  EAPOL_PROG=$(which eapol_test)
 
-BEGIN=`date +%s.%N`
-
-#echo "$EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR"
-
-# try authenticate
-if [ $VERBOSE -eq 0 ]; then
-  $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR | awk '/^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
-else
-  if [ $VERBOSE -eq 1 ]; then
-    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';} /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';}  /Access-Reject/ {exit '$RET_EAP_FAILED';} '  > $OUT2
-  else
-    $EAPOL_PROG -c$CONF -a$IP -p$PORT -s$SECRET -t$TIMEOUT -M$MAC -C"$CONN_INFO" $EXTRA_EAPOL_ARGS $STATUS_DIR |  awk '/RADIUS message/ {print} /Attribute/ {print} /Value/ {print} /polish/ {print} /^SUCCESS$/ {exit '$RET_SUCC';} /^CTRL-EVENT-EAP-FAILURE EAP authentication failed$/ {exit '$RET_EAP_FAILED';} /^EAPOL test timed out$/ {exit '$RET_RADIUS_NOT_AVAIL';}  /^CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully$/ {exit '$RET_SUCC';} /^EAP: Received EAP-Failure$/ {exit '$RET_EAP_FAILED';} /Access-Reject/ {exit '$RET_EAP_FAILED';} ' > $OUT
-  fi
-fi
-
-
-
-RETURN_CODE=$?
-
-END=`date +%s.%N`
-#T=$((END-BEGIN))
-T=$(echo "$END-$BEGIN" | bc)
-TU=$(echo "$T * 1000" | bc)
-
-#echo $RETURN_CODE
-
-# remove configuration file
-#rm $CONF
-#cp $CONF test.conf
-
-if [ $VERBOSE -eq 1 ]; then
-  grep -A 100 "(Access-Accept)" $OUT2 > $OUT
-  rm $OUT2
-fi
-
-# processing of return code
-# Successfull authentication
-if [ $RETURN_CODE -eq $RET_SUCC ]; then
-  printf "access-accept; %0.2f sec " $T
-  printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-  if [ $VERBOSE -gt 0 ]; then
-    cat $OUT
+  if [[ -z "$EAPOL_PROG" ]]
+  then
+    # manually set the path if it wasn't determined automatically
+    EAPOL_PROG=/usr/local/bin/eapol_test
   fi
 
-  if [ -n "$GET_CERT" ]; then
-    if [ -n "$WRITE_CERT" ]; then
-      get_cert_info $WRITE_CERT
-    else
-      get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-    fi
+  # default verbosity
+  VERBOSE=0
 
-    printf "\n"
-    printf "RADIUS server certificate information:\n"
-    printf "%s\n" "$(echo "$cert_info" | grep 'Issuer: ' | sed 's/^[[:space:]]*//g')"
-    printf "%s\n" "$(echo "$cert_info" | grep 'Subject: ' | sed 's/^[[:space:]]*//g')"
-    printf "%s\n" "$(echo "$cert_info" | grep -A 2 'Validity' | sed 's/^[[:space:]]*//g')"
-    printf "%s\n" "$(echo "$cert_info" | grep 'DNS:' | sed 's/^[[:space:]]*//g')"
+  #default timeout
+  TIMEOUT=5
+
+  #default mac address
+  MAC="70:6f:6c:69:73:68"
+
+  # default connection info
+  CONN_INFO="rad_eap_test + eapol_test"
+
+  # return codes
+  RET_SUCC=3
+  RET_EAP_FAILED=4
+  RET_RADIUS_NOT_AVAIL=5
+  RET_CERT_SUBJ_MISMATCH=6
+  RET_CERT_CA_MISMATCH=7
+  RET_CERT_EXPIRED=8
+  RET_DOMAIN_MISMATCH=9
+
+  # cleanup temporary files?
+  CLEANUP=1
+}
+# ===========================================================================================
+# main function
+# ===========================================================================================
+function main()
+{
+  default_config
+  process_options "$@"
+  check_settings
+
+  if [[ $? -ne 0 ]]     # print usage if some settings were incorrect
+  then
+    usage
   fi
 
-  garbage
-  exit 0;
-fi
-
-# Bad name or password
-# string "CTRL-EVENT-EAP-FAILURE EAP authentication failed"
-if [ $RETURN_CODE -eq $RET_EAP_FAILED ]; then
-  printf "access-reject; %0.2f sec " $T
-  printf "|rtt=%0.0fms;;;0;%d accept=0.5;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-  if [ $VERBOSE -gt 0 ]; then
-    cat $OUT
-  fi
-
-  garbage
-  exit 1;
-fi
-
-# timeout return same error as above
-# timeout string "EAPOL test timed out"
-if [ $RETURN_CODE -eq $RET_RADIUS_NOT_AVAIL ]; then
-  printf "timeout; %0.0f sec " $T
-  printf "|rtt=%0.0fms;;;0;%d accept=0;0.5:;0:;0;1\n" $TU $((TIMEOUT * 1000))
-  if [ $VERBOSE -gt 0 ]; then
-    cat $OUT
-  fi
-
-  garbage
-  exit 2;
-fi
-
-# other case is probably error
-echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE;
-exit 3;
-
-
+  generate_config
+  authenticate
+  process_auth_result
+}
+# ===========================================================================================
+# set the handler for INT and TERM first
+trap "cleanup ; exit 2" INT TERM
+# ===========================================================================================
+# run the main function
+main "$@"
+# ===========================================================================================
