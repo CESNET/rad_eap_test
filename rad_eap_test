@@ -48,12 +48,12 @@ function test_cert_expiry()
     if [[ $expiry_date -lt $expiry_now ]]
     then
       PROG_OUT=$(printf "CRITICAL: certificate EXPIRED %s\n" $(date -d "@$expiry_date" -Idate))
-      EXIT_CODE=2
+      EXIT_CODE=$EXIT_CRITICAL
 
     elif [[ $expiry_date -lt $expiry_warn ]]
     then
       PROG_OUT=$(printf "WARNING: cerificate expires soon (%s)\n" $(date -d "@$expiry_date" -Idate))
-      EXIT_CODE=1
+      EXIT_CODE=$EXIT_WARNING
     fi
   fi
 }
@@ -104,7 +104,7 @@ function process_cert_expiry()
     if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
     then
       PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
-      EXIT_CODE=2
+      EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
     else
       get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
@@ -115,7 +115,7 @@ function process_cert_expiry()
     if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
     then
       PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
-      EXIT_CODE=2
+      EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
     else
       get_cert_info $WRITE_CERT
@@ -169,7 +169,7 @@ function print_out()
 # ===========================================================================================
 function process_auth_result()
 {
-  EXIT_CODE=0
+  EXIT_CODE=$EXIT_OK
 
   # preset output needed for most situations
   PROG_OUT=$(
@@ -183,26 +183,26 @@ function process_auth_result()
       ;;                                    # nothing to do here, EXIT_CODE is preset to 0
 
     $RET_EAP_FAILED)                        # wrong username or password
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_WARNING;;
 
     $RET_RADIUS_NOT_AVAIL)                  # timeout
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_CERT_SUBJ_MISMATCH)                # cert subject mismatch
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_CERT_EXPIRED)                      # cert expired
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_DOMAIN_MISMATCH)                   # domain mismatch
-      EXIT_CODE=2;;
+      EXIT_CODE=$EXIT_CRITICAL;;
 
     *)                                      # other case is probably error
       PROG_OUT=$(echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE)
-      EXIT_CODE=3;;
+      EXIT_CODE=$EXIT_UNKNOWN;;
   esac
 
   test_cert_expiry      # test cert expiry dates if requested, may override EXIT_CODE
@@ -805,6 +805,13 @@ function default_config()
   RET_CERT_CA_MISMATCH=7
   RET_CERT_EXPIRED=8
   RET_DOMAIN_MISMATCH=9
+
+
+  # exit codes
+  EXIT_OK=0
+  EXIT_WARNING=1
+  EXIT_CRITICAL=2
+  EXIT_UNKNOWN=3
 
   # cleanup temporary files?
   CLEANUP=1
