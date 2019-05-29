@@ -303,7 +303,7 @@ function authenticate()
     RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
     STATUS_CODE="access-reject (certificate expired)"
 
-  elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "OUT" =~ $reject ]]
+  elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "$OUT" =~ $reject ]]
   then
     RETURN_CODE=$RET_EAP_FAILED         # auth failed
     STATUS_CODE="access-reject"
