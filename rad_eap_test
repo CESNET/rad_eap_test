@@ -210,7 +210,7 @@ function process_auth_result()
   exit $EXIT_CODE       # exit with $EXIT_CODE
 }
 # ===========================================================================================
-# run eapol_test
+# run eapol_test and try to authenticate using the specified configuration
 # ===========================================================================================
 function run_eapol_test()
 {
@@ -258,9 +258,9 @@ function get_domain_mismatch_details()
   '
 }
 # ===========================================================================================
-# run eapol_test and try to authenticate using the specified configuration
+# determine the return code of this program based on processing the eapol_test output
 # ===========================================================================================
-function authenticate()
+function determine_return_code()
 {
   # constants which define return codes based on eapol_test output
   local eap_fail1='CTRL-EVENT-EAP-FAILURE EAP authentication failed'
@@ -831,7 +831,7 @@ function main()
   fi
 
   generate_config
-  authenticate
+  determine_return_code
   process_auth_result
 }
 # ===========================================================================================
