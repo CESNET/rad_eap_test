@@ -200,6 +200,10 @@ function process_auth_result()
     $RET_DOMAIN_MISMATCH)                   # domain mismatch
       EXIT_CODE=$EXIT_CRITICAL;;
 
+    $RET_EAPOL_TEST_FAILED)                 # eapol_test return code was nonzero
+      PROG_OUT="eapol_test returned error: $OUT"
+      EXIT_CODE=$EXIT_UNKNOWN;;
+
     *)                                      # other case is probably error
       PROG_OUT=$(echo "Probably configuration error, examine config in \"$MYTMPDIR\". Return code: " $RETURN_CODE)
       EXIT_CODE=$EXIT_UNKNOWN;;
@@ -218,6 +222,7 @@ function run_eapol_test()
 
   # try to authenticate
   OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" $EXTRA_EAPOL_ARGS 2>&1)      # save output as a variable
+  EAPOL_PROG_RETCODE=$?     # save the return code in case some error happended
 
   END=$(date +%s.%N)        # end the "timer"
 }
@@ -276,6 +281,13 @@ function determine_return_code()
   local domain_mismatch="err='Domain mismatch'"
 
   run_eapol_test
+
+  # check if there was an error launching eapol_test
+  if [[ $EAPOL_PROG_RETCODE -ne 0 ]]
+  then
+    RETURN_CODE=$RET_EAPOL_TEST_FAILED               # eapol_test failed to execute
+    STATUS_CODE="$OUT"
+  fi
 
   # determine the RETURN_CODE based on specific constants used in eapol_test output
   if [[ "$OUT" =~ $succ1 || "$OUT" =~ $succ2 ]]
@@ -805,6 +817,7 @@ function default_config()
   RET_CERT_CA_MISMATCH=7
   RET_CERT_EXPIRED=8
   RET_DOMAIN_MISMATCH=9
+  RET_EAPOL_TEST_FAILED=10
 
 
   # exit codes
