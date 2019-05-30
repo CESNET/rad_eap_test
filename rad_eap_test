@@ -161,7 +161,14 @@ function process_cert()
 function print_out()
 {
   echo "$PROG_OUT" # print the output
-  verbose  # add extra verbose output if the user wants it, also process certs if wanted
+
+  if [[ $EXIT_CODE -eq $EXIT_UNKNOWN ]]
+  then
+    :       # do not add extra verbose output when exiting with unknown status
+  else
+    verbose  # add extra verbose output if the user wants it, also process certs if wanted
+  fi
+
   cleanup  # cleanup temp files
 }
 # ===========================================================================================
