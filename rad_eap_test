@@ -244,18 +244,21 @@ function get_domain_mismatch_details()
 
     /TLS: Match domain against/,/TLS: Domain match/ {                   # everyting between the two strings
 
-      if (match($0, /^TLS: Match domain against.*/))                    # ignore lines starting with "TLS: Match domain against."
+      if(match($0, /^TLS: Match domain against.*/))                    # ignore lines starting with "TLS: Match domain against."
         next
 
-      if (match($0, /^TLS: None of the dNSName\(s\) matched.*/))        # ignore lines starting with "TLS: None of the dNSName(s) matched."
+      if(match($0, /^TLS: None of the dNSName\(s\) matched.*/))        # ignore lines starting with "TLS: None of the dNSName(s) matched."
         next
 
-      if(match($0, /^TLS: Certificate dNSName.*/) && count == 0) {      # first occurence of domain name, ignore it
+      if(match($0, /^TLS: No CommonName match found*/))                # ignore lines starting with "TLS: No CommonName match found"
+        next
+
+      if((match($0, /^TLS: Certificate dNSName.*/) && count == 0) || (match($0, /^TLS: Certificate commonName.*/) && count == 0)) {      # first occurence of domain name or common name, ignore it
         count++
         next
       }
 
-      if(match($0, /^TLS: Certificate dNSName.*/)) {                    # other dns names, print comma after every domain name
+      if(match($0, /^TLS: Certificate dNSName.*/) || match($0, /TLS: Certificate commonName.*/)) {                    # other dns names or common names, print comma after every domain name
         printf(", ")
         next
       }
