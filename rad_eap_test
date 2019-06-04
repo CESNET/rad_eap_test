@@ -733,9 +733,7 @@ function check_settings()
   if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
-  fi
-
-  if [[ -n "$WRITE_CERT" ]]
+  elif [[ -n "$WRITE_CERT" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
   fi
