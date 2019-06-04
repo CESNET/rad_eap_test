@@ -98,7 +98,18 @@ verbose()
 # ===========================================================================================
 function process_cert_expiry()
 {
-  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+  if [[ -n "$WRITE_CERT" ]]
+  then
+    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
+    then
+      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      EXIT_CODE=$EXIT_CRITICAL
+      return 1      # cert not retrieved
+    else
+      get_cert_info $WRITE_CERT
+    fi
+
+  elif [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
    then
 
     if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
@@ -108,17 +119,6 @@ function process_cert_expiry()
       return 1      # cert not retrieved
     else
       get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-    fi
-
-  elif [[ -n "$WRITE_CERT" ]]
-  then
-    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
-    then
-      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
-      EXIT_CODE=$EXIT_CRITICAL
-      return 1      # cert not retrieved
-    else
-      get_cert_info $WRITE_CERT
     fi
   fi
 
@@ -730,12 +730,12 @@ function check_settings()
   OUTFILE=$MYTMPDIR/tmp-$$.out
 
   # RADIUS server cert
-  if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
-  then
-    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
-  elif [[ -n "$WRITE_CERT" ]]
+  if [[ -n "$WRITE_CERT" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
+  elif [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
+  then
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
   fi
 
   return 0
