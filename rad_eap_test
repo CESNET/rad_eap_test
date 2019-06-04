@@ -19,6 +19,19 @@
 
 
 # ===========================================================================================
+# when checking cert expiry there is a possibility that the server certificate already
+# expired and eapol_test failed to succesfully authenticate based on some configuration options
+# When this happens eapol_test does not write the server cert (so it can be checked for expiry),
+# so we need to check eapol_test output directly
+# ===========================================================================================
+function checked_expired_cert()
+{
+  if [[ $RETURN_CODE -eq $RET_CERT_EXPIRED ]]
+  then
+    return 1
+  fi
+}
+# ===========================================================================================
 # test certificate expiry based on user set number of days
 # ===========================================================================================
 function test_cert_expiry()
@@ -31,6 +44,13 @@ function test_cert_expiry()
   # certicite expiry was set
   if [[ -n "$CERTIFICATE_EXPIRY" ]]
   then
+    checked_expired_cert
+
+    if [[ $? -ne 0 ]]       # cert already expired
+    then
+      return
+    fi
+
     process_cert_expiry    # get the cert info needed
 
     if [[ $? -ne 0 ]]       # no cert available
@@ -286,8 +306,9 @@ function determine_return_code()
   local reject='Access-Reject'
   local cert_subj_mismatch="err='Subject mismatch'"
   local cert_not_matching_ca1="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
-  local cert_not_matching_ca2="err='unable to get issuer certificate'"        # TODO - what about self-signed certs or so ?
+  local cert_not_matching_ca2="err='unable to get issuer certificate'"              # TODO - what about self-signed certs or so ?
   local cert_expired="err='certificate has expired'"
+  local root_cert="depth=0"                                # CA certs are validated at depth 0 (root). TODO: What about intermediate certs?
   local domain_mismatch="err='Domain mismatch'"
 
   run_eapol_test
@@ -320,10 +341,16 @@ function determine_return_code()
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
 
-  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired ]]        # certificate expired
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired && "(echo "$OUT" | grep "$cert_expired")" =~ $root_cert ]]        # root CA certificate expired
   then
     RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
-    STATUS_CODE="access-reject (certificate expired)"
+    STATUS_CODE="access-reject (CA certificate expired [$(echo "$OUT" | grep "$cert_expired" | sed 's/^.*subject/subject/; s/ err=.*//')])"
+
+  # certificate expired (a more complex logic would be probably needed to distinguish end server and intermediate certs)
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired && ! "(echo "$OUT" | grep "$cert_expired")" =~ $root_cert ]]
+  then
+    RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
+    STATUS_CODE="access-reject (certificate expired [$(echo "$OUT" | grep "$cert_expired" | sed 's/^.*subject/subject/; s/ err=.*//')])"
 
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "$OUT" =~ $reject ]]
   then
