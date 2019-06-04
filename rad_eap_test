@@ -30,6 +30,13 @@ function checked_expired_cert()
   then
     return 1
   fi
+
+  # when $RET_CERT_CA_MISMATCH happens, no cert is saved by eapol_test
+  # so there is nothing to check expiry on
+  if [[ $RETURN_CODE -eq $RET_CERT_CA_MISMATCH ]]       # same problem as above
+  then
+    return 1
+  fi
 }
 # ===========================================================================================
 # test certificate expiry based on user set number of days
