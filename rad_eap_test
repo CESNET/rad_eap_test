@@ -339,7 +339,7 @@ function determine_return_code()
   elif [[ -n "$CA_CRT" && ( "$OUT" =~ $cert_not_matching_ca1 || "$OUT" =~ $cert_not_matching_ca2 ) ]]        # CA was speficied
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
-    STATUS_CODE="access-reject (certificate not matching specified CA)"
+    STATUS_CODE="access-reject (certificate not matching specified CA ["$(openssl x509 -nameopt utf8 -in "$CA_CRT" -noout -subject)"])"
 
   elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired && "(echo "$OUT" | grep "$cert_expired")" =~ $root_cert ]]        # root CA certificate expired
   then
