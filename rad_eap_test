@@ -125,27 +125,18 @@ verbose()
 # ===========================================================================================
 function process_cert_expiry()
 {
-  if [[ -n "$WRITE_CERT" ]]
+  if [[ -n "$CERT_LOCATION" ]]
   then
-    if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
+
+    if [[ ! -s "$CERT_LOCATION" ]]  # cert file does not exist or is empty
     then
+
+
       PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
       EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
     else
-      get_cert_info $WRITE_CERT
-    fi
-
-  elif [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
-   then
-
-    if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
-    then
-      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
-      EXIT_CODE=$EXIT_CRITICAL
-      return 1      # cert not retrieved
-    else
-      get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
+      get_cert_info "$CERT_LOCATION"
     fi
   fi
 
@@ -387,16 +378,7 @@ function cleanup()
     echo "Leaving temporary files in $MYTMPDIR"
     echo -e "\tConfiguration: $CONF"
     echo -e "\tOutput: $OUTFILE"
-
-    if [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
-    then
-      echo -e "\tRADIUS certiticate: ${MYTMPDIR}/RADIUS_cert.pem"
-    fi
-
-    if [[ -n "$WRITE_CERT" ]]
-    then
-      echo -e "\tRADIUS certiticate: $WRITE_CERT"
-    fi
+    echo -e "\tRADIUS certiticate: $CERT_LOCATION"
   fi
 }
 # ===========================================================================================
@@ -767,9 +749,11 @@ function check_settings()
   if [[ -n "$WRITE_CERT" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
+    CERT_LOCATION="$WRITE_CERT"
   elif [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
   then
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
+    CERT_LOCATION="${MYTMPDIR}/RADIUS_cert.pem"
   fi
 
   return 0
