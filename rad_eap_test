@@ -201,29 +201,15 @@ function process_cert_expiry()
 # ===========================================================================================
 function process_cert()
 {
-  if [[ -n "$GET_CERT" ]]
+  if [[ -n "$GET_CERT" ]]               # print cert only if it was requested (-X or -B does not imply -b)
    then
-
-    if [[ -n "$WRITE_CERT" ]]       # process cert only if GET_CERT was speficied together with WRITE_CERT
+    if [[ ! -s "$CERT_LOCATION" ]]      # cert file does not exist or is empty
     then
-      if [[ ! -s "$WRITE_CERT" ]]  # cert file does not exist or is empty
-      then
-        echo ""
-        echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
-      else
-        get_cert_info $WRITE_CERT
-        print_cert
-      fi
-
+      echo ""
+      echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
-      if [[ ! -s "${MYTMPDIR}/RADIUS_cert.pem" ]]  # cert file does not exist or is empty
-      then
-        echo ""
-        echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
-      else
-        get_cert_info ${MYTMPDIR}/RADIUS_cert.pem
-        print_cert
-      fi
+      get_cert_info "$CERT_LOCATION"
+      print_cert
     fi
   fi
 }
