@@ -19,26 +19,6 @@
 
 
 # ===========================================================================================
-# when checking cert expiry there is a possibility that the server certificate already
-# expired and eapol_test failed to succesfully authenticate based on some configuration options
-# When this happens eapol_test does not write the server cert (so it can be checked for expiry),
-# so we need to check eapol_test output directly
-# ===========================================================================================
-function checked_expired_cert()
-{
-  if [[ $RETURN_CODE -eq $RET_CERT_EXPIRED ]]
-  then
-    return 1
-  fi
-
-  # when $RET_CERT_CA_MISMATCH happens, no cert is saved by eapol_test
-  # so there is nothing to check expiry on
-  if [[ $RETURN_CODE -eq $RET_CERT_CA_MISMATCH ]]       # same problem as above
-  then
-    return 1
-  fi
-}
-# ===========================================================================================
 # test certificate expiry based on user set number of days
 # ===========================================================================================
 function test_cert_expiry()
@@ -51,13 +31,6 @@ function test_cert_expiry()
   # certicite expiry was set
   if [[ -n "$CERTIFICATE_EXPIRY" ]]
   then
-    checked_expired_cert
-
-    if [[ $? -ne 0 ]]       # cert already expired
-    then
-      return
-    fi
-
     process_cert_expiry    # get the cert info needed
 
     if [[ $? -ne 0 ]]       # no cert available
@@ -184,8 +157,6 @@ function process_cert_expiry()
 
     if [[ ! -s "$CERT_LOCATION" ]]  # cert file does not exist or is empty
     then
-
-
       PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
       EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
