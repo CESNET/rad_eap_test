@@ -257,6 +257,10 @@ function process_auth_result()
       EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_CERT_CA_MISMATCH)                  # cert not matching specified CA
+      PROG_OUT=$(echo "$PROG_OUT" ; echo ""; get_ca_cert_mismatch_details )      # add extra error info about mismatch here
+      EXIT_CODE=$EXIT_CRITICAL;;
+
+    $RET_CERT_CA_MISMATCH_INCOMPLETE)       # cert not matching specified CA, incomplete CA chain
       EXIT_CODE=$EXIT_CRITICAL;;
 
     $RET_CERT_EXPIRED)                      # cert expired
@@ -331,6 +335,19 @@ function get_domain_mismatch_details()
   '
 }
 # ===========================================================================================
+# get details about CA cert mismatch
+# use just CN from certs
+# ===========================================================================================
+function get_ca_cert_mismatch_details()
+{
+  echo -n "'$(openssl x509 -nameopt utf8 -in "$CA_CRT" -noout -subject)'"
+
+  if [[ -n "$CERT_LOCATION" && -s "$CERT_LOCATION" ]]
+  then
+    echo -n " is not matching '$(openssl x509 -nameopt utf8 -in "$CERT_LOCATION" -noout -issuer | tr -d "\n")'"
+  fi
+}
+# ===========================================================================================
 # determine the return code of this program based on processing the eapol_test output
 # ===========================================================================================
 function determine_return_code()
@@ -343,8 +360,15 @@ function determine_return_code()
   local succ2='CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
   local reject='Access-Reject'
   local cert_subj_mismatch="err='Subject mismatch'"
-  local cert_not_matching_ca1="err='unable to get local issuer certificate'"        # TODO - what about self-signed certs or so ?
-  local cert_not_matching_ca2="err='unable to get issuer certificate'"              # TODO - what about self-signed certs or so ?
+
+  # 2 X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT: unable to get issuer certificate
+  # the issuer certificate of a looked up certificate could not be found. This normally means the list of trusted certificates is not complete.
+  local ca_mismatch_incomplete_chain="err='unable to get issuer certificate'"           # certificate not matching specified CA. Specified CA does not have full valid chain (missing root or intermediate certs).
+
+  # from openssl man pages: 20 X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY: unable to get local issuer certificate
+  # the issuer certificate could not be found: this occurs if the issuer certificate of an untrusted certificate cannot be found.
+  local ca_mismatch_cert_not_matching_ca="err='unable to get local issuer certificate'"            # certificate not matching specified CA. Server cert does not match specified CA (different CA subject and issuer in server cert)
+
   local cert_expired="err='certificate has expired'"
   local root_cert="depth=0"                                # CA certs are validated at depth 0 (root). TODO: What about intermediate certs?
   local domain_mismatch="err='Domain mismatch'"
@@ -374,14 +398,19 @@ function determine_return_code()
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
     STATUS_CODE="access-reject (certificate subject mismatch [$(echo "$OUT" | grep 'did not match with' | sed 's/TLS: Subject //')])"
 
-  elif [[ -n "$CA_CRT" && ( "$OUT" =~ $cert_not_matching_ca1 || "$OUT" =~ $cert_not_matching_ca2 ) ]]        # CA was speficied
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_incomplete_chain ]]        # CA was speficied, but is incomplete
+  then
+    RETURN_CODE=$RET_CERT_CA_MISMATCH_INCOMPLETE         # certificate not matching CA
+    STATUS_CODE="access-reject (certificate not matching specified CA [used CA does not have a complete chain])"
+
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_cert_not_matching_ca ]]        # CA was speficied but does not match server cert
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
-    STATUS_CODE="access-reject (certificate not matching specified CA ["$(openssl x509 -nameopt utf8 -in "$CA_CRT" -noout -subject)"])"
+    STATUS_CODE="access-reject (certificate not matching specified CA)"
 
   elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_expired && "(echo "$OUT" | grep "$cert_expired")" =~ $root_cert ]]        # root CA certificate expired
   then
-    RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
+    RETURN_CODE=$RET_CERT_EXPIRED             # certificate expired
     STATUS_CODE="access-reject (CA certificate expired [$(echo "$OUT" | grep "$cert_expired" | sed 's/^.*subject/subject/; s/ err=.*//')])"
 
   # certificate expired (a more complex logic would be probably needed to distinguish end server and intermediate certs)
@@ -901,10 +930,10 @@ function default_config()
   RET_RADIUS_NOT_AVAIL=5
   RET_CERT_SUBJ_MISMATCH=6
   RET_CERT_CA_MISMATCH=7
-  RET_CERT_EXPIRED=8
-  RET_DOMAIN_MISMATCH=9
-  RET_EAPOL_TEST_FAILED=10
-
+  RET_CERT_CA_MISMATCH_INCOMPLETE=8
+  RET_CERT_EXPIRED=9
+  RET_DOMAIN_MISMATCH=10
+  RET_EAPOL_TEST_FAILED=11
 
   # exit codes
   EXIT_OK=0
