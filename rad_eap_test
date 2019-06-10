@@ -121,6 +121,60 @@ verbose()
   process_cert      # also process certificates if wanted
 }
 # ===========================================================================================
+# extract the certificate directly from eapol_test output
+# params:
+# 1) file where to write the cert
+#
+# there are some cases, when certificate is not written to file by eapol_test, for example:
+# - when checking cert expiry there is a possibility that the server certificate already
+#  expired and eapol_test failed to succesfully authenticate based on some configuration options
+#  When this happens eapol_test does not write the server cert (so it can be checked for expiry),
+#  so we need to check eapol_test output directly
+# - when CA cert mismatch happens, no certificate is written to eapo_test output file
+# ===========================================================================================
+function extract_server_cert()
+{
+  local tmp
+  local certs
+  local offset
+  local len
+
+  echo "$OUT" | grep -A 1 '(handshake/certificate)' | head -2 | tail -1 |    # get the server cert hexdump message
+  cut -d ":" -f 3 | tr -d " " |                                              # hex bytes
+  tail -c +21 | xxd -r -p > "$1"                                             # all the certs that the server sent in binary format. tail strips first 20 bytes (determined by experiment)
+
+  tmp=$(binwalk "$1" | grep -P '^[0-9]+')      # where the certs are in the file
+
+  if [[ -n "$tmp" ]]        # if $tmp is empty, server did not send any certificate (probably a timeout?)
+  then
+    # extract all the certs from file
+    while read line
+    do
+      offset=$(echo "$line" | awk '{ print $1 }')
+      len=$(echo "$line" | awk '{ print $NF }')
+
+      if [[ -n "$certs" ]]
+      then
+        certs="$certs\n$(dd if="$1" ibs=1 skip=$offset obs=$len 2>/dev/null | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
+      else
+        certs="$(dd if="$1" ibs=1 skip=$offset bs=$len 2>/dev/null| openssl x509 -inform der)"                 # extract just the cert bytes and pass it to openssl
+      fi
+    done <<< "$tmp"
+
+    echo -e "$certs" > "$1"
+  fi
+}
+# ===========================================================================================
+# check if server certificate was requested and if it was retrieved
+# ===========================================================================================
+function save_server_cert()
+{
+  if [[ -n "$CERT_LOCATION" ]]  # cert file does not exist or is empty
+  then
+    extract_server_cert "$CERT_LOCATION"
+  fi
+}
+# ===========================================================================================
 # process RADIUS certificate for expiry check
 # ===========================================================================================
 function process_cert_expiry()
@@ -361,6 +415,8 @@ function determine_return_code()
     STATUS_CODE="timeout"
   fi
 
+  save_server_cert                             # always save the server cert if the user requested it
+
   TIME_SEC=$(echo "$END - $BEGIN" | bc)        # how long the authentication took in seconds
   TIME_MSEC=$(echo "$TIME_SEC * 1000" | bc)           # how long the authentication took in milliseconds
 }
@@ -579,6 +635,18 @@ function check_settings()
     return 1
   fi
 
+  if [[ -z "$(which dd)" ]]
+  then
+    echo "dd is required by rad_eap_test, please install if first."
+    return 1
+  fi
+
+  if [[ -z "$(which binwalk)" ]]
+  then
+    echo "binwalk is required by rad_eap_test, please install if first."
+    return 1
+  fi
+
   # check if eapol_test exists
   if [[ ! -e "$EAPOL_PROG" ]]
   then
@@ -748,11 +816,17 @@ function check_settings()
   # RADIUS server cert
   if [[ -n "$WRITE_CERT" ]]
   then
-    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
+    #EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o $WRITE_CERT"
+    # eapol_test has some strange behavior (bugs?) which seriously affect it
+    # when using output file for writing server certs.
+    # This SHOULD be fixed in eapol_test code.
+    # Instead of using eapol_test to extract server certs,
+    # we rather implemented our own server certificate extraction directly from eapol_test output
+
     CERT_LOCATION="$WRITE_CERT"
   elif [[ -n "$GET_CERT" || -n "$CERTIFICATE_EXPIRY" ]]
   then
-    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
+    #EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -o ${MYTMPDIR}/RADIUS_cert.pem"
     CERT_LOCATION="${MYTMPDIR}/RADIUS_cert.pem"
   fi
 
