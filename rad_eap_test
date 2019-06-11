@@ -647,12 +647,6 @@ function check_settings()
     return 1
   fi
 
-  if [[ -z "$(which dd)" ]]
-  then
-    echo "dd is required by rad_eap_test, please install if first."
-    return 1
-  fi
-
   # check if eapol_test exists
   if [[ ! -e "$EAPOL_PROG" ]]
   then
