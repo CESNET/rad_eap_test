@@ -107,33 +107,59 @@ verbose()
 # ===========================================================================================
 function extract_server_cert()
 {
-  local tmp
+  local hex
   local certs
-  local offset
-  local len
+  local cert_len
+  local pos=0
+  local header
 
-  echo "$OUT" | grep -A 1 '(handshake/certificate)' | head -2 | tail -1 |    # get the server cert hexdump message
+  hex=$(echo "$OUT" | grep -A 1 '(handshake/certificate)' | head -2 | tail -1 |    # get the server cert hexdump message
   cut -d ":" -f 3 | tr -d " " |                                              # hex bytes
-  tail -c +21 | xxd -r -p > "$1"                                             # all the certs that the server sent in binary format. tail strips first 20 bytes (determined by experiment)
+  tail -c +21)                                             # all the certs that the server sent in hex. tail strips first 20 bytes (determined by experiment) which is probably some openssl header
 
-  tmp=$(binwalk "$1" | grep -P '^[0-9]+')      # where the certs are in the file
-
-  if [[ -n "$tmp" ]]        # if $tmp is empty, server did not send any certificate (probably a timeout?)
-  then
-    # extract all the certs from file
-    while read line
+  while :
+  do
+    # there may be some EOC bytes after each processed cert
+    # to overcome this, read 1 byte at a time and check if it matches cert header
+    while [[ $pos -le ${#hex} ]]        # reached end of hex string, end cert processing
     do
-      offset=$(echo "$line" | awk '{ print $1 }')
-      len=$(echo "$line" | awk '{ print $NF }')
+      header=${hex:$pos:4}              # extract 2 byte cert header
 
-      if [[ -n "$certs" ]]
+      if [[ $header != "3082" ]]        # header does not match hex bytes 3082
       then
-        certs="$certs\n$(dd if="$1" ibs=1 skip=$offset obs=$len 2>/dev/null | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
+        ((pos+=2))                      # extract next byte
+        continue
       else
-        certs="$(dd if="$1" ibs=1 skip=$offset bs=$len 2>/dev/null| openssl x509 -inform der)"                 # extract just the cert bytes and pass it to openssl
+        break                           # header found
       fi
-    done <<< "$tmp"
+    done
 
+    if [[ $header != "3082" && $pos -gt ${#hex}  ]]        # header does not match hex bytes 3082 and pos is out of string
+    then
+      break                         # most likely some error
+    fi
+
+    ((pos+=4))                      # set pos for extracting cert_len
+
+    cert_len=${hex:$pos:4}          # extract 2 byte cert lenght
+    cert_len=$((0x$cert_len))       # covert to decimal
+
+    ((pos-=4))                      # set pos to beginning of the current cert
+
+    if [[ -n "$certs" ]]
+    then
+      # cert len must be multipltied by 2 to get byte count, add header and cert len
+      certs="$certs\n$(echo "${hex:$pos:$cert_len*2 + 8}" | xxd -r -p | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
+    else
+      # cert len must be multipltied by 2 to get byte count, add header and cert len
+      certs="$(echo "${hex:$pos:$cert_len*2 + 8}" | xxd -r -p | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
+    fi
+
+    ((pos=$pos + $cert_len*2 + 8))               # set pos for processing next cert: header (2 bytes) + cert_len (2 bytes) + cert (*2 for bytes) + current pos
+  done
+
+  if [[ -n "$certs" ]]
+  then
     echo -e "$certs" > "$1"
   fi
 }
@@ -624,12 +650,6 @@ function check_settings()
   if [[ -z "$(which dd)" ]]
   then
     echo "dd is required by rad_eap_test, please install if first."
-    return 1
-  fi
-
-  if [[ -z "$(which binwalk)" ]]
-  then
-    echo "binwalk is required by rad_eap_test, please install if first."
     return 1
   fi
 
