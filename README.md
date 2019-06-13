@@ -23,6 +23,16 @@ as output you might get:
 
 More speficic outputs are also possible based on options used.
 
+# dependencies
+
+rad_eap_test requires several programs to run:
+
+- eapol_test
+- dig
+- bc
+- sed
+- awk
+
 ## compiling eapol_test
 
 To compile eapol_test do the following:
@@ -37,15 +47,6 @@ echo -e "# IPv6 support for eapol test\nCONFIG_IPV6=y" >> .config
 make eapol_test
 cp eapol_test /usr/local/bin
 ```
-
-# dependencies
-
-rad_eap_test requires several programs to run:
-
-- dig
-- bc
-- sed
-- awk
 
 # examples
 
