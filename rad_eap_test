@@ -366,6 +366,8 @@ function determine_return_code()
   # the issuer certificate could not be found: this occurs if the issuer certificate of an untrusted certificate cannot be found.
   local ca_mismatch_cert_not_matching_ca="err='unable to get local issuer certificate'"            # certificate not matching specified CA. Server cert does not match specified CA (different CA subject and issuer in server cert)
 
+  local ca_mismatch_selfsign="err='self signed certificate in certificate chain'"   # certificate not matching specified CA. Server is sending full chain with root which is self-signed
+
   local cert_expired="err='certificate has expired'"
   local root_cert="depth=0"                                # CA certs are validated at depth 0 (root). TODO: What about intermediate certs?
   local domain_mismatch="err='Domain mismatch'"
@@ -401,6 +403,11 @@ function determine_return_code()
     STATUS_CODE="access-reject (certificate not matching specified CA [used CA does not have a complete chain])"
 
   elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_cert_not_matching_ca ]]        # CA was speficied but does not match server cert
+  then
+    RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
+    STATUS_CODE="access-reject (certificate not matching specified CA)"
+
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_selfsign ]]        # CA was speficied but the server is sending a completely different chain
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
