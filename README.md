@@ -5,9 +5,9 @@ servers by EAP. It internally uses eapol_test to do the actual testing.
 Usage is simple (for more info run rad_eap_test without any arguments):
 
 ```
-	rad_eap_test -H <radius.server.name> \
-		-P 1812 -S <secret> -u <user@realm.tld> \
-		-p <password> -m WPA-EAP -e PEAP
+rad_eap_test -H <radius.server.name> \
+    -P 1812 -S <secret> -u <user@realm.tld> \
+    -p <password> -m WPA-EAP -e PEAP
 ```
 
 as output you might get:
