@@ -12,10 +12,14 @@ rad_eap_test -H <radius.server.name> \
 
 as output you might get:
 
- - access-accept; <latency>  program exits with return code 0		
- - access-reject; <latency>  program exits with return code 1		
- - timeout; <timeout>        program exits with return code 2		
- - sort of config problem    program exits with return code 3		
+ - `access-accept; <latency>`
+    program exits with return code 0
+ - `access-reject; <latency>`
+    program exits with return code 1
+ - `timeout; <timeout>`
+    program exits with return code 2
+ - `sort of config problem`
+    program exits with return code 3
 
 More speficic outputs are also possible based on options used.
 
