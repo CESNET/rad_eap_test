@@ -599,7 +599,7 @@ function usage()
 # eapol_test is a program for testing RADIUS protocol and EAP authentication methods
 
 Parameters :
--H <address> - Address of radius server (DNS name or IP address)
+-H <address> - Address of radius server (DNS name or IP address). When using DNS name IPv4 address will be used unless -6 option is present. Both IPv4 or IPv6 addresses may be used.
 -P <port> - Port of radius server
 -S <secret> - Secret for radius server communication
 -u <username> - Username (user@realm.tld)
@@ -632,6 +632,7 @@ Parameters :
 -g - print the entire unmodified output of eapol_test
 -V - Show received Chargeable-User-Identity and/or Operator-Name
 -X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
+-6 force use of IPv6 when using DNS name as RADIUS server address
 -h - show this message
 " >&2
   exit 1
@@ -798,7 +799,12 @@ function check_settings()
 
   if [[ -z "$IP" ]]
   then
-    IP=$(dig +short "$ADDRESS")
+    if [[ "$IPV6" == "YES" ]]
+    then
+      IP=$(dig +short "$ADDRESS" AAAA)
+    else
+      IP=$(dig +short "$ADDRESS")
+    fi
   fi
 
   # Sanity check: did we get an IP address?
@@ -844,7 +850,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:6" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -880,6 +886,7 @@ function process_options()
       V) VERBOSE=1;;
       X) CERTIFICATE_EXPIRY=$OPTARG;;
       d) DOMAIN_MATCH="$OPTARG";;
+      6) IPV6="YES";;
       h) usage;;
       \?) usage;;
     esac
