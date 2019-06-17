@@ -117,6 +117,11 @@ function extract_server_cert()
   cut -d ":" -f 3 | tr -d " " |                                              # hex bytes
   tail -c +21)                                             # all the certs that the server sent in hex. tail strips first 20 bytes (determined by experiment) which is probably some openssl header
 
+  if [[ -z "$hex" ]]
+  then
+    return                              # no handshake/certificate string found in output
+  fi
+
   while :
   do
     # there may be some EOC bytes after each processed cert
