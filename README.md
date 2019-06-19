@@ -70,6 +70,12 @@ Additional options used set:
 - timeout is set to `50` seconds
 - username is set to `user@example.com` 
 
+# certificates
+
+When using rad_eap_test to verify server certificates igainst CA certificate or to save server certificates, be aware that
+rad_eap_test uses its own logic to extract server certificates. Using eapol_test to extract server certs directly seemed to be
+too buggy for production use (there may be some duplicit certificates, server cert may be mixed with CA cert or server cert may not be saved at all).
+If you encounter any problems with certificate extraction, please let us know.
 
 # contributing
 
