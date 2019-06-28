@@ -268,6 +268,9 @@ function process_auth_result()
     $RET_CERT_EXPIRED)                      # cert expired
       EXIT_CODE=$EXIT_CRITICAL;;
 
+    $RET_CERT_IN_FUTURE)                    # cert issued in future
+      EXIT_CODE=$EXIT_CRITICAL;;
+
     $RET_DOMAIN_MISMATCH)                   # domain mismatch
       EXIT_CODE=$EXIT_CRITICAL;;
 
