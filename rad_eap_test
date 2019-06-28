@@ -374,6 +374,7 @@ function determine_return_code()
   local ca_mismatch_selfsign="err='self signed certificate in certificate chain'"   # certificate not matching specified CA. Server is sending full chain with root which is self-signed
 
   local cert_expired="err='certificate has expired'"
+  local cert_not_yet_valid="err='certificate is not yet valid'"
   local root_cert="depth=0"                                # CA certs are validated at depth 0 (root). TODO: What about intermediate certs?
   local domain_mismatch="err='Domain mismatch'"
 
@@ -427,6 +428,12 @@ function determine_return_code()
   then
     RETURN_CODE=$RET_CERT_EXPIRED         # certificate expired
     STATUS_CODE="access-reject (certificate expired [$(echo "$OUT" | grep "$cert_expired" | sed 's/^.*subject/subject/; s/ err=.*//')])"
+
+  # TODO - distinguish CA cert and server cert
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $cert_not_yet_valid ]]        # certificate is not yet valid
+  then
+    RETURN_CODE=$RET_CERT_IN_FUTURE             # certificate issued in future
+    STATUS_CODE="access-reject (certificate is not yet valid [$(echo "$OUT" | grep "$cert_not_yet_valid" | sed 's/^.*subject/subject/; s/ err=.*//')])"
 
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "$OUT" =~ $reject ]]
   then
@@ -950,6 +957,7 @@ function default_config()
   RET_CERT_EXPIRED=9
   RET_DOMAIN_MISMATCH=10
   RET_EAPOL_TEST_FAILED=11
+  RET_CERT_IN_FUTURE=9
 
   # exit codes
   EXIT_OK=0
