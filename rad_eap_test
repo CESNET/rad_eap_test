@@ -647,8 +647,8 @@ Parameters :
 -g - print the entire unmodified output of eapol_test
 -V - Show received Chargeable-User-Identity and/or Operator-Name
 -X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
--6 force use of IPv6 when using DNS name as RADIUS server address
--4 use IPv4 when using DNS name as RADIUS server address (this is the default, but the option exists for compatibility)
+-6 - force use of IPv6 when using DNS name as RADIUS server address
+-4 - use IPv4 when using DNS name as RADIUS server address (this is the default, but the option exists for compatibility)
 -h - show this message
 " >&2
   exit 1
