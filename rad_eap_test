@@ -648,6 +648,7 @@ Parameters :
 -V - Show received Chargeable-User-Identity and/or Operator-Name
 -X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
 -6 force use of IPv6 when using DNS name as RADIUS server address
+-4 use IPv4 when using DNS name as RADIUS server address (this is the default, but the option exists for compatibility)
 -h - show this message
 " >&2
   exit 1
@@ -877,7 +878,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:6" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:64" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -914,6 +915,7 @@ function process_options()
       X) CERTIFICATE_EXPIRY=$OPTARG;;
       d) DOMAIN_MATCH="$OPTARG";;
       6) IPV6="YES";;
+      4) IPV6="NO";;
       h) usage;;
       \?) usage;;
     esac
