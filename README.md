@@ -38,6 +38,7 @@ rad_eap_test requires several programs to run:
 To compile eapol_test do the following:
 
 ```
+apt-get install libnl-genl-3-dev libdbus-1-dev libssl-dev pkg-config gcc make
 wget http://w1.fi/releases/wpa_supplicant-2.8.tar.gz
 tar xvzf wpa_supplicant-2.8.tar.gz
 cd wpa_supplicant-2.8/wpa_supplicant
