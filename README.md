@@ -67,9 +67,6 @@ Additional options used set:
 - EAP method is set to `PEAP`
 - connection info is set to `example autehntication`
 - method is set to `WPA-EAP`
-- password is set to `testing_password`
-- timeout is set to `50` seconds
-- username is set to `user@example.com` 
 
 # certificates
 
