@@ -931,12 +931,14 @@ function default_config()
   umask 0077
 
   # path to eapol_test
-  # try to determine the path automatically first
-  EAPOL_PROG=$(which eapol_test)
+  if [[ -z "$EAPOL_PROG" ]]
+  then
+    EAPOL_PROG=$(which eapol_test)
+  fi
 
   if [[ -z "$EAPOL_PROG" ]]
   then
-    # manually set the path if it wasn't determined automatically
+    # manually set the path if it was not defined or determined automatically
     EAPOL_PROG=/usr/local/bin/eapol_test
   fi
 
