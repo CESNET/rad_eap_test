@@ -239,10 +239,16 @@ function process_auth_result()
   EXIT_CODE=$EXIT_OK
 
   # preset output needed for most situations
+  #
+  # FIX: decimal separator in bc(1) is '.' regardless of the locale
+  # rad_eap_test: Zeile 249: printf: .020428888: Ungültige Zahl.
+  # rad_eap_test: Zeile 250: printf: 20.428888000: Ungültige Zahl.
+
   PROG_OUT=$(
-              printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
-              printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
-            )
+	  # fake numeric locale just for printf with format %f
+	  LC_NUMERIC="en_US.UTF-8" printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
+	  LC_NUMERIC="en_US.UTF-8" printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
+	)
 
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
