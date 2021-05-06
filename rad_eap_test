@@ -280,6 +280,9 @@ function process_auth_result()
     $RET_DOMAIN_MISMATCH)                   # domain mismatch
       EXIT_CODE=$EXIT_CRITICAL;;
 
+    $RET_PASSWD_EXPIRED)                    # MSCHAPv2 password expired
+      EXIT_CODE=$EXIT_WARNING;;
+
     $RET_EAPOL_TEST_FAILED)                 # eapol_test return code was nonzero
       PROG_OUT="eapol_test returned error: $OUT"
       EXIT_CODE=$EXIT_UNKNOWN;;
@@ -371,6 +374,7 @@ function determine_return_code()
   local succ2='CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully'
   local reject='Access-Reject'
   local cert_subj_mismatch="err='Subject mismatch'"
+  local passwd_expired='EAP-MSCHAPV2: Password expired'
 
   # 2 X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT: unable to get issuer certificate
   # the issuer certificate of a looked up certificate could not be found. This normally means the list of trusted certificates is not complete.
@@ -444,6 +448,10 @@ function determine_return_code()
     RETURN_CODE=$RET_CERT_IN_FUTURE             # certificate issued in future
     STATUS_CODE="access-reject (certificate is not yet valid [$(echo "$OUT" | grep "$cert_not_yet_valid" | sed 's/^.*subject/subject/; s/ err=.*//')])"
 
+  elif [[ "$OUT" =~ $passwd_expired ]] # MSCHAPv2 password expiry
+  then
+    RETURN_CODE=$RET_PASSWD_EXPIRED
+    STATUS_CODE="access-reject (password has expired)"
   elif [[ "$OUT" =~ $eap_fail1 || "$OUT" =~ $eap_fail2 || "$OUT" =~ $reject ]]
   then
     RETURN_CODE=$RET_EAP_FAILED         # auth failed
@@ -969,6 +977,7 @@ function default_config()
   RET_DOMAIN_MISMATCH=10
   RET_EAPOL_TEST_FAILED=11
   RET_CERT_IN_FUTURE=12
+  RET_PASSWD_EXPIRED=13
 
   # exit codes
   EXIT_OK=0
