@@ -245,10 +245,10 @@ function process_auth_result()
   # rad_eap_test: Zeile 250: printf: 20.428888000: Ungültige Zahl.
 
   PROG_OUT=$(
-	  # fake numeric locale just for printf with format %f
-	  LC_ALL="C" printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
-	  LC_ALL="C" printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
-	)
+    # fake numeric locale just for printf with format %f
+    LC_ALL="C" printf "%s; %0.2f sec " "$STATUS_CODE" $TIME_SEC
+    LC_ALL="C" printf "|rtt=%0.0fms;;;0;%d accept=1;0.5:;0:;0;1\n" $TIME_MSEC $((TIMEOUT * 1000))
+  )
 
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
