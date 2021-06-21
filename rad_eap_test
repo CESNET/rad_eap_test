@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===========================================================================================
-# rad_eapol_test nagios compatible wraper around eapol_test
+# rad_eapol_test nagios compatible wrapper around eapol_test
 # Copyright (c) 2005-2019 CESNET, z.s.p.o.
 # Authors: Pavel Poláček <pavel.polacek@ujep.cz>
 #          Jan Tomášek <jan.tomasek@cesnet.cz>
@@ -100,7 +100,7 @@ verbose()
 #
 # there are some cases, when certificate is not written to file by eapol_test, for example:
 # - when checking cert expiry there is a possibility that the server certificate already
-#  expired and eapol_test failed to succesfully authenticate based on some configuration options
+#  expired and eapol_test failed to successfully authenticate based on some configuration options
 #  When this happens eapol_test does not write the server cert (so it can be checked for expiry),
 #  so we need to check eapol_test output directly
 # - when CA cert mismatch happens, no certificate is written to eapo_test output file
@@ -146,17 +146,17 @@ function extract_server_cert()
 
     ((pos+=4))                      # set pos for extracting cert_len
 
-    cert_len=${hex:$pos:4}          # extract 2 byte cert lenght
-    cert_len=$((0x$cert_len))       # covert to decimal
+    cert_len=${hex:$pos:4}          # extract 2 byte cert length
+    cert_len=$((0x$cert_len))       # convert to decimal
 
     ((pos-=4))                      # set pos to beginning of the current cert
 
     if [[ -n "$certs" ]]
     then
-      # cert len must be multipltied by 2 to get byte count, add header and cert len
+      # cert len must be multiplied by 2 to get byte count, add header and cert len
       certs="$certs\n$(echo "${hex:$pos:$cert_len*2 + 8}" | xxd -r -p | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
     else
-      # cert len must be multipltied by 2 to get byte count, add header and cert len
+      # cert len must be multiplied by 2 to get byte count, add header and cert len
       certs="$(echo "${hex:$pos:$cert_len*2 + 8}" | xxd -r -p | openssl x509 -inform der)"       # extract just the cert bytes and pass it to openssl
     fi
 
@@ -188,7 +188,7 @@ function process_cert_expiry()
 
     if [[ ! -s "$CERT_LOCATION" ]]  # cert file does not exist or is empty
     then
-      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      PROG_OUT="CRITICAL: Certificate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
       EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
     else
@@ -208,7 +208,7 @@ function process_cert()
     if [[ ! -s "$CERT_LOCATION" ]]      # cert file does not exist or is empty
     then
       echo ""
-      echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      echo "Certificate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info "$CERT_LOCATION"
       print_cert
@@ -216,7 +216,7 @@ function process_cert()
   fi
 }
 # ===========================================================================================
-# print final outpupt
+# print final output
 # ===========================================================================================
 function print_out()
 {
@@ -252,7 +252,7 @@ function process_auth_result()
 
   # processing based on $RETURN_CODE
   case "$RETURN_CODE" in
-    $RET_SUCC)                              # successfull authentication
+    $RET_SUCC)                              # successful authentication
       ;;                                    # nothing to do here, EXIT_CODE is preset to 0
 
     $RET_EAP_FAILED)                        # wrong username or password
@@ -293,7 +293,7 @@ function process_auth_result()
   esac
 
   test_cert_expiry      # test cert expiry dates if requested, may override EXIT_CODE
-  print_out             # print output, add verbose output if requsted and cleanup
+  print_out             # print output, add verbose output if requested and cleanup
   exit $EXIT_CODE       # exit with $EXIT_CODE
 }
 # ===========================================================================================
@@ -305,7 +305,7 @@ function run_eapol_test()
 
   # try to authenticate
   OUT=$($EAPOL_PROG -c "$CONF" -a "$IP" -p "$PORT" -s "$SECRET" -t "$TIMEOUT" -M "$MAC" -C "$CONN_INFO" $EXTRA_EAPOL_ARGS 2>&1)      # save output as a variable
-  EAPOL_PROG_RETCODE=$?     # save the return code in case some error happended
+  EAPOL_PROG_RETCODE=$?     # save the return code in case some error happened
 
   END=$(date +%s.%N)        # end the "timer"
 }
@@ -318,7 +318,7 @@ function get_domain_mismatch_details()
   echo "$OUT" | awk '
     BEGIN { count = 0 }
 
-    /TLS: Match domain against/,/TLS: Domain match/ {                   # everyting between the two strings
+    /TLS: Match domain against/,/TLS: Domain match/ {                   # everything between the two strings
 
       if(match($0, /^TLS: Match domain against.*/))                    # ignore lines starting with "TLS: Match domain against."
         next
@@ -329,7 +329,7 @@ function get_domain_mismatch_details()
       if(match($0, /^TLS: No CommonName match found*/))                # ignore lines starting with "TLS: No CommonName match found"
         next
 
-      if((match($0, /^TLS: Certificate dNSName.*/) && count == 0) || (match($0, /^TLS: Certificate commonName.*/) && count == 0)) {      # first occurence of domain name or common name, ignore it
+      if((match($0, /^TLS: Certificate dNSName.*/) && count == 0) || (match($0, /^TLS: Certificate commonName.*/) && count == 0)) {      # first occurrence of domain name or common name, ignore it
         count++
         next
       }
@@ -406,27 +406,27 @@ function determine_return_code()
     RETURN_CODE=$RET_SUCC               # success
     STATUS_CODE="access-accept"
 
-  elif [[ -n "$DOMAIN_MATCH" && "$OUT" =~ $domain_mismatch ]]        # domain match was speficied
+  elif [[ -n "$DOMAIN_MATCH" && "$OUT" =~ $domain_mismatch ]]        # domain match was specified
   then
     RETURN_CODE=$RET_DOMAIN_MISMATCH         # domain name mismatch
     STATUS_CODE="access-reject (domain mismatch [$(get_domain_mismatch_details)])"
 
-  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was speficied
+  elif [[ -n "$SUBJ_MATCH" && "$OUT" =~ $cert_subj_mismatch ]]        # certifitace subject was specified
   then
     RETURN_CODE=$RET_CERT_SUBJ_MISMATCH         # certificate subject mismatch
     STATUS_CODE="access-reject (certificate subject mismatch [$(echo "$OUT" | grep 'did not match with' | sed 's/TLS: Subject //')])"
 
-  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_incomplete_chain ]]        # CA was speficied, but is incomplete
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_incomplete_chain ]]        # CA was specified, but is incomplete
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH_INCOMPLETE         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA [used CA does not have a complete chain])"
 
-  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_cert_not_matching_ca ]]        # CA was speficied but does not match server cert
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_cert_not_matching_ca ]]        # CA was specified but does not match server cert
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
 
-  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_selfsign ]]        # CA was speficied but the server is sending a completely different chain
+  elif [[ -n "$CA_CRT" && "$OUT" =~ $ca_mismatch_selfsign ]]        # CA was specified but the server is sending a completely different chain
   then
     RETURN_CODE=$RET_CERT_CA_MISMATCH         # certificate not matching CA
     STATUS_CODE="access-reject (certificate not matching specified CA)"
@@ -482,7 +482,7 @@ function cleanup()
     echo "Leaving temporary files in $MYTMPDIR"
     echo -e "\tConfiguration: $CONF"
     echo -e "\tOutput: $OUTFILE"
-    echo -e "\tRADIUS certiticate: $CERT_LOCATION"
+    echo -e "\tRADIUS certificate: $CERT_LOCATION"
   fi
 }
 # ===========================================================================================
@@ -628,9 +628,9 @@ function usage()
 # eapol_test is a program for testing RADIUS protocol and EAP authentication methods
 
 Parameters :
--H <address> - Address of radius server (DNS name or IP address). When using DNS name IPv4 address will be used unless -6 option is present. Both IPv4 or IPv6 addresses may be used.
--P <port> - Port of radius server
--S <secret> - Secret for radius server communication
+-H <address> - Address of RADIUS server (DNS name or IP address). When using DNS name IPv4 address will be used unless -6 option is present. Both IPv4 or IPv6 addresses may be used.
+-P <port> - Port of RADIUS server
+-S <secret> - Secret for RADIUS server communication
 -u <username> - Username (user@realm.tld)
 -A <anonymous_id> - Anonymous identity (anonymous_user@realm.tld)
 -p <password> - Password
@@ -641,7 +641,7 @@ Parameters :
 -s <ssid> - SSID
 -e <method> - EAP method (PEAP | TLS | TTLS | LEAP)
 -M <mac_addr> - MAC address in xx:xx:xx:xx:xx:xx format
--i <connect_info> - Connection info (in radius log: connect from <connect_info>)
+-i <connect_info> - Connection info (in RADIUS log: connect from <connect_info>)
 -d <domain_name> - Constraint for server domain name. FQDN is used as a full match requirement for the server certificate. Multiple values may be specified. Multiple values must be separated by semicollon.
 -k <user_key_file> - user certificate key file
 -l <user_key_file_password> - password for user certificate key file
@@ -713,19 +713,19 @@ function check_settings()
 
   if [[ -z "$ADDRESS" ]]
   then
-    echo "Address of radius server is not specified. (option -H)"
+    echo "Address of RADIUS server is not specified. (option -H)"
     return 1
   fi
 
   if [[ -z "$PORT" ]]
   then
-    echo "Port of radius server is not specified. (option -P)"
+    echo "Port of RADIUS server is not specified. (option -P)"
     return 1
   fi
 
   if [[ -z "$SECRET" ]]
   then
-    echo "Secret for radius server communication is not specified. (option -S)"
+    echo "Secret for RADIUS server communication is not specified. (option -S)"
     return 1
   fi
 
