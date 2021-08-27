@@ -188,7 +188,7 @@ function process_cert_expiry()
 
     if [[ ! -s "$CERT_LOCATION" ]]  # cert file does not exist or is empty
     then
-      PROG_OUT="CRITICAL: Certiticate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
+      PROG_OUT="CRITICAL: Certificate expiry check was requested, but the certificate was not retrieved."  # probably timeout ?
       EXIT_CODE=$EXIT_CRITICAL
       return 1      # cert not retrieved
     else
@@ -208,7 +208,7 @@ function process_cert()
     if [[ ! -s "$CERT_LOCATION" ]]      # cert file does not exist or is empty
     then
       echo ""
-      echo "Certiticate information was requested, but the certificate was not retrieved."  # probably timeout ?
+      echo "Certificate information was requested, but the certificate was not retrieved."  # probably timeout ?
     else
       get_cert_info "$CERT_LOCATION"
       print_cert
@@ -482,7 +482,7 @@ function cleanup()
     echo "Leaving temporary files in $MYTMPDIR"
     echo -e "\tConfiguration: $CONF"
     echo -e "\tOutput: $OUTFILE"
-    echo -e "\tRADIUS certiticate: $CERT_LOCATION"
+    echo -e "\tRADIUS certificate: $CERT_LOCATION"
   fi
 }
 # ===========================================================================================
