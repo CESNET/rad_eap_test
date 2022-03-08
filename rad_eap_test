@@ -578,6 +578,12 @@ function generate_config()
   then
     echo "  pairwise=CCMP TKIP" >> $CONF
     echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
+
+    if [[ ! -z "$PHASE1_OPT" ]]
+    then
+      echo "  phase1=\"$PHASE1_OPT\"" >> $CONF
+    fi
+
     echo "  phase2=\"auth=$PHASE2\"" >> $CONF
   fi
 
@@ -658,6 +664,7 @@ Parameters :
 -b - print details about certificate of RADIUS server (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert and print it)
 -B <file> - save certificate of RADIUS server to specified file
 -n <directory> - store temporary files in specified directory
+-o - string options to be used in phase1 (such as disabling specific TLS versions)
 -g - print the entire unmodified output of eapol_test
 -V - Show received Chargeable-User-Identity and/or Operator-Name
 -X <warn_days> - check certificate expiry (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert which is checked for expiry)
@@ -892,7 +899,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:64" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:o:gVX:64" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -924,6 +931,7 @@ function process_options()
       b) GET_CERT="YES";;
       B) WRITE_CERT=$OPTARG;;
       n) TMPDIR=$OPTARG;;
+      o) PHASE1_OPT=$OPTARG;;
       g) VERBOSE=4;;
       V) VERBOSE=1;;
       X) CERTIFICATE_EXPIRY=$OPTARG;;
@@ -965,6 +973,9 @@ function default_config()
 
   # default connection info
   CONN_INFO="rad_eap_test + eapol_test"
+
+  # default phase1 settings
+  PHASE1_OPT="tls_disable_tlsv1_0=0 tls_disable_tlsv1_1=0 tls_disable_tlsv1_2=0 tls_disable_tlsv1_3=1"
 
   # return codes
   RET_SUCC=3
