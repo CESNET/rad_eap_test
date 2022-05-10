@@ -653,6 +653,7 @@ Parameters :
 -O <domain.edu.cctld> - Operator-Name value in domain name format
 -I <ip address> - explicitly specify NAS-IP-Address
 -C - request Chargeable-User-Identity
+-E <vsa> - Vendor-Specific Attribute (VSA) in id:type:data format
 -T - send Called-Station-Id in MAC:SSID format
 -f - send big access-request to cause fragmentation
 -b - print details about certificate of RADIUS server (whole certificate chain may be retrieved by eapol_test, there is a certain logic that tries to determine the end server cert and print it)
@@ -815,6 +816,20 @@ function check_settings()
     EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N89:x:00"
   fi
 
+  if [[ -n "$VENDOR_SPECIFIC" ]]
+  then
+    local vendor_attr_value=$(
+      read vendor_id vendor_type vendor_data <<< $(echo "$VENDOR_SPECIFIC" | tr ':' ' ')
+      printf '%08x' $vendor_id
+      printf '%02x' $vendor_type
+      printf '%02x' $((2 + ${#vendor_data}))
+      echo -n $vendor_data | while read -n 1 character; do
+        printf '%02x' \'$character
+      done
+    )
+    EXTRA_EAPOL_ARGS="$EXTRA_EAPOL_ARGS -N26:x:$vendor_attr_value"
+  fi
+
   if [[ -n "$FRAGMENT" ]]
   then
     for i in $(seq 1 6)
@@ -892,7 +907,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:64" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CE:TfhbB:n:gVX:64" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -919,6 +934,7 @@ function process_options()
       O) OPERATOR_NAME=$OPTARG;;
       I) NAS_IP_ADDRESS=$OPTARG;;
       C) REQUEST_CUI="YES";;
+      E) VENDOR_SPECIFIC=$OPTARG;;
       T) CALLED_STATION_ID="YES";;
       f) FRAGMENT="YES";;
       b) GET_CERT="YES";;
