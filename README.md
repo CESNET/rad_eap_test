@@ -39,9 +39,9 @@ To compile eapol_test do the following:
 
 ```
 apt-get install libnl-genl-3-dev libdbus-1-dev libssl-dev pkg-config gcc make
-wget http://w1.fi/releases/wpa_supplicant-2.8.tar.gz
-tar xvzf wpa_supplicant-2.8.tar.gz
-cd wpa_supplicant-2.8/wpa_supplicant
+wget http://w1.fi/releases/wpa_supplicant-2.10.tar.gz
+tar xvzf wpa_supplicant-2.10.tar.gz
+cd wpa_supplicant-2.10/wpa_supplicant
 cp defconfig .config
 sed -i 's/^#CONFIG_EAPOL_TEST=y/CONFIG_EAPOL_TEST=y/' .config
 echo -e "# IPv6 support for eapol test\nCONFIG_IPV6=y" >> .config
