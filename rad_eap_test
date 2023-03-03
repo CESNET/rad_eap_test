@@ -576,8 +576,8 @@ function generate_config()
 
   if [[ "$EAP" = "PEAP" || "$EAP" = "TTLS" ]]
   then
-    echo "  pairwise=CCMP TKIP" >> $CONF
-    echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
+    echo "  pairwise=CCMP" >> $CONF
+    echo "  group=CCMP" >> $CONF
     echo "  phase2=\"auth=$PHASE2\"" >> $CONF
   fi
 
