@@ -578,7 +578,11 @@ function generate_config()
   then
     echo "  pairwise=CCMP TKIP" >> $CONF
     echo "  group=CCMP TKIP WEP104 WEP40" >> $CONF
-    echo "  phase2=\"auth=$PHASE2\"" >> $CONF
+    if [[ "$PHASE2" =~ ^EAP[_-] ]] ; then
+      echo "  phase2=\"autheap=${PHASE2#EAP[-_]}\"" >> $CONF
+    else
+      echo "  phase2=\"auth=$PHASE2\"" >> $CONF
+    fi
   fi
 
   if [[ -n "$PHASE1" ]]
@@ -654,7 +658,7 @@ Parameters :
 -a <ca_cert_file> - certificate of CA
 -L <TLS protocols> - comma-separated list of TLS protocols to enable - select from: TLSv1,TLSv1.1,TLSv1.2,TLSv1.3 (translates to phase1 options, -1).
 -1 <phase1_options> - set of options for phase1 (\"peapver=1 peaplabel=1\")
--2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2)
+-2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2,EAP-GTC)
 -x <subject_match> - Substring to be matched against the subject of the authentication server certificate.
 -N - Identify and do not delete temporary files
 -O <domain.edu.cctld> - Operator-Name value in domain name format
