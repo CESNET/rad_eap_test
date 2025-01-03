@@ -585,6 +585,11 @@ function generate_config()
     fi
   fi
 
+  if [[ -n "$PHASE1" ]]
+  then
+    echo "  phase1=\"$PHASE1\"" >> $CONF
+  fi
+
   if [[ ! -z "$CA_CRT" ]]
   then
     echo "  ca_cert=\"$CA_CRT\"" >> $CONF
@@ -651,6 +656,8 @@ Parameters :
 -l <user_key_file_password> - password for user certificate key file
 -j <user_cert_file> - user certificate file
 -a <ca_cert_file> - certificate of CA
+-L <TLS protocols> - comma-separated list of TLS protocols to enable - select from: TLSv1,TLSv1.1,TLSv1.2,TLSv1.3 (translates to phase1 options, -1).
+-1 <phase1_options> - set of options for phase1 (\"peapver=1 peaplabel=1\")
 -2 <phase2 method> - Phase2 type (PAP,CHAP,MSCHAPV2,EAP-GTC)
 -x <subject_match> - Substring to be matched against the subject of the authentication server certificate.
 -N - Identify and do not delete temporary files
@@ -676,6 +683,11 @@ Parameters :
 # ===========================================================================================
 function check_settings()
 {
+  local tls10_disabled
+  local tls11_disabled
+  local tls12_disabled
+  local tls13_disabled
+
   # check dependencies used in this script
   if [[ -z "$(which bc)" ]]
   then
@@ -797,6 +809,20 @@ function check_settings()
     SSID="eduroam";
   fi
 
+  if [[ -n "$TLS_PROTOCOLS" ]]
+  then
+    TLS_PROTOCOLS=",$TLS_PROTOCOLS," # for easier matching
+
+    # For each TLS protocol, if included in the list, exit value will be 0 and the protocol will be enabled.
+    [[ $TLS_PROTOCOLS =~ ,TLSv1, ]] ; tls10_disabled=$?
+    [[ $TLS_PROTOCOLS =~ ,TLSv1\.1, ]] ; tls11_disabled=$?
+    [[ $TLS_PROTOCOLS =~ ,TLSv1\.2, ]] ; tls12_disabled=$?
+    [[ $TLS_PROTOCOLS =~ ,TLSv1\.3, ]] ; tls13_disabled=$?
+
+    PHASE1="$PHASE1 tls_disable_tlsv1_0=$tls10_disabled tls_disable_tlsv1_1=$tls11_disabled tls_disable_tlsv1_2=$tls12_disabled tls_disable_tlsv1_3=$tls13_disabled"
+    PHASE1="${PHASE1# }" # trim leading whitespace - introduced above if PHASE1 was initially empty
+  fi
+
   if [[ -z "$PHASE2" ]]
   then
     PHASE2="MSCHAPV2"
@@ -896,7 +922,7 @@ function check_settings()
 # ===========================================================================================
 function process_options()
 {
-  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:2:x:vcNO:I:CTfhbB:n:gVX:64" opt
+  while getopts "H:P:S:u:p:t:m:s:e:t:M:i:d:j:k:a:A:l:L:1:2:x:vcNO:I:CTfhbB:n:gVX:64" opt
   do
     case "$opt" in
       H) ADDRESS=$OPTARG;;
@@ -917,6 +943,8 @@ function process_options()
       a) CA_CRT=$OPTARG;;
       A) ANONYM_ID=$OPTARG;;
       l) KEY_PASS=$OPTARG;;
+      L) TLS_PROTOCOLS=$OPTARG;;
+      1) PHASE1="$OPTARG";;
       2) PHASE2=$OPTARG;;
       N) CLEANUP=0;;
       x) SUBJ_MATCH=$OPTARG;;
